@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-
 #if UNITY_EDITOR
-using UnityEditor;
+ using UnityEditor;
  #endif
 using System.Collections;
 using System.Collections.Generic;
@@ -42,7 +41,7 @@ public class SC_VN_Choice : SequencerCommandBase
     
     override public void undo()
     {
-    }
+    } 
 
     override public void forward(SequencePlayer player)
     {
@@ -63,7 +62,7 @@ public class SC_VN_Choice : SequencerCommandBase
         {
             makeSureListsAreCorrectSize(); 
            
-            string[] nicks = sequencerData.getSectionNames();            
+            string[] nicks = ((SequencerData)SequencerData.get()).getSectionNames();            
 
             EditorGUILayout.BeginVertical();
             {

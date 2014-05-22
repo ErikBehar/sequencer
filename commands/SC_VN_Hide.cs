@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-
 #if UNITY_EDITOR
-using UnityEditor;
+ using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -19,10 +18,12 @@ using Holoville.HOTween;
 public class SC_VN_Hide : SequencerCommandBase
 {
     public bool useTo = false;
+
     public int lastSelectedWho = 0;
     public int lastSelectedTo = -1;
     public float time = 0;
     public bool waitForEndOfTween = false;
+
     private Vector3 previousPosition;
 
     override public void initChild()
@@ -40,12 +41,12 @@ public class SC_VN_Hide : SequencerCommandBase
                 onUndoComplete();
         } else
         {
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.transform;
             previousPosition = new Vector3(target.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
 
             if (useTo)
             {
-                Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+                Transform to = ((SequencerData)SequencerData.get()).targets [lastSelectedTo].target.transform;
                 HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onExecuteCompleteEvt));
             } else
             {
@@ -59,12 +60,12 @@ public class SC_VN_Hide : SequencerCommandBase
     
     override public void undo()
     {
-        sequencerData.targets [lastSelectedWho].target.SetActive(true);
-        Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+        ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.SetActive(true);
+        Transform target = ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.transform;
         Transform from = null;
         if (useTo)
         {
-            from = sequencerData.targets [lastSelectedTo].target.transform;
+            from = ((SequencerData)SequencerData.get()).targets [lastSelectedTo].target.transform;
             target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
             HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoCompleteEvt));
         }
@@ -77,7 +78,8 @@ public class SC_VN_Hide : SequencerCommandBase
     override public void backward(SequencePlayer player)
     {
         undo();
-    }
+    } 
+
 
     public void onExecuteCompleteEvt(TweenEvent evt)
     {
@@ -86,7 +88,7 @@ public class SC_VN_Hide : SequencerCommandBase
     
     public void onExecuteComplete()
     {
-        sequencerData.targets [lastSelectedWho].target.SetActive(false);  
+        ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.SetActive(false);  
         if (waitForEndOfTween)
         {
             myPlayer.callBackFromCommand();
@@ -109,7 +111,7 @@ public class SC_VN_Hide : SequencerCommandBase
     #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
-        string[] nicks = sequencerData.getTargetNickNames();
+        string[] nicks = ((SequencerData)SequencerData.get()).getTargetNickNames();
         
         GUILayout.Label("hide who?:");
         lastSelectedWho = EditorGUILayout.Popup(lastSelectedWho, nicks, GUILayout.Width(100));

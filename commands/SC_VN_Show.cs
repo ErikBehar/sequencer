@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-
 #if UNITY_EDITOR
-using UnityEditor;
+ using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -20,12 +19,15 @@ using Holoville.HOTween;
 public class SC_VN_Show : SequencerCommandBase
 {
     public bool useFrom = false;
+
     public int lastSelectedWho = 0;
     public int lastSelectedFrom = -1;
     public int lastSelectedTo = 0;
     public float time = 0;
     public bool waitForEndOfTween = false;
+
     private bool wasActiveAtStart = false;
+
     private Vector3 previousPosition;
 
     override public void initChild()
@@ -42,16 +44,16 @@ public class SC_VN_Show : SequencerCommandBase
             undo();
         } else
         {
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.transform;
             Transform from = null;
             if (useFrom)
-                from = sequencerData.targets [lastSelectedFrom].target.transform;
+                from = ((SequencerData)SequencerData.get()).targets [lastSelectedFrom].target.transform;
             else
             {
                 from = target.transform;
                 previousPosition = from.localPosition;
             }
-            Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+            Transform to = ((SequencerData)SequencerData.get()).targets [lastSelectedTo].target.transform;
          
             wasActiveAtStart = target.gameObject.activeInHierarchy;
             target.gameObject.SetActive(true);  
@@ -67,11 +69,11 @@ public class SC_VN_Show : SequencerCommandBase
     
     override public void undo()
     {
-        Transform target = sequencerData.targets [lastSelectedWho].target.transform;
-        Transform from = sequencerData.targets [lastSelectedTo].target.transform;
+        Transform target = ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.transform;
+        Transform from = ((SequencerData)SequencerData.get()).targets [lastSelectedTo].target.transform;
         Transform to = null;
         if (useFrom)
-            to = sequencerData.targets [lastSelectedFrom].target.transform;
+            to = ((SequencerData)SequencerData.get()).targets [lastSelectedFrom].target.transform;
 
         target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
 
@@ -88,7 +90,7 @@ public class SC_VN_Show : SequencerCommandBase
     override public void backward(SequencePlayer player)
     {
         undo();
-    }
+    } 
     
     public void onTweenComplete(TweenEvent evt)
     {  
@@ -100,14 +102,14 @@ public class SC_VN_Show : SequencerCommandBase
 
     public void onUndoComplete(TweenEvent evt)
     {
-        Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+        Transform target = ((SequencerData)SequencerData.get()).targets [lastSelectedWho].target.transform;
         target.gameObject.SetActive(wasActiveAtStart);
     }
     
     #if UNITY_EDITOR
     override public void drawCustomUi()
     {
-        string[] nicks = sequencerData.getTargetNickNames();
+        string[] nicks = ((SequencerData)SequencerData.get()).getTargetNickNames();
         
         GUILayout.Label("show who?:");
         lastSelectedWho = EditorGUILayout.Popup(lastSelectedWho, nicks, GUILayout.Width(100));

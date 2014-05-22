@@ -1,29 +1,34 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-
 #if UNITY_EDITOR
-using UnityEditor;
+ using UnityEditor;
  #endif
 using UnityEngine;
 
 public class SequencerWindow : EditorWindow
 {
     private static SequencerWindow thisWindowLive;
+
     private Vector2 scrollPosTargets;
-    private Vector2 scrollPosSections;
+    private Vector2 scrollPosSections; 
+
     private GameObject dataHolderValGoLastVal = null;
     private static GameObject dataHolderGO = null;
     public static SequencerData sequencerData;
+
     private static string lastSelectedArea = "targets"; //can be "targets" , "sections"
 
     private static int lastSelectedSection = -1;
     private static string lastSelectedSectionName = "";
     private static int lastSelectedCommand = 0;
+
     private GUIStyle guiBGAltColorA;
     private Texture2D littleTextureForBG_A;
+
     private GUIStyle guiBGAltColorB;
     private Texture2D littleTextureForBG_B;
+
     private static int insertIndex = 0;
 
    #region Window Stuff
@@ -82,7 +87,6 @@ public class SequencerWindow : EditorWindow
 
     void OnGUI()
     {
-        testForData();
 
         EditorGUILayout.BeginVertical();
         {
@@ -158,12 +162,12 @@ public class SequencerWindow : EditorWindow
         
         scrollPosTargets = EditorGUILayout.BeginScrollView(scrollPosTargets);
         {
-            if (sequencerData != null && sequencerData.targets != null)
+            if (sequencerData != null && ((SequencerData)SequencerData.get()).targets != null)
             {
                 EditorGUILayout.BeginVertical();
                 {
-                    SequencerTargetModel[] tempTargets = new SequencerTargetModel[sequencerData.targets.Count]; 
-                    sequencerData.targets.CopyTo(tempTargets);
+                    SequencerTargetModel[] tempTargets = new SequencerTargetModel[((SequencerData)SequencerData.get()).targets.Count]; 
+                    ((SequencerData)SequencerData.get()).targets.CopyTo(tempTargets);
                     List<SequencerTargetModel> targets = new List<SequencerTargetModel>(tempTargets);
 
                     for (int i = 0; i < targets.Count; i++)
@@ -196,30 +200,27 @@ public class SequencerWindow : EditorWindow
             GUILayout.Label("Sections");
             if (GUILayout.Button("New Section"))
                 doAddNewSection();
-
-//            if (GUILayout.Button("Fix Commands to have reference to data object"))
-//                doFixCommands();
         }   
         EditorGUILayout.EndHorizontal();  
 
         //spacer 
         GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1)); 
 
-        if (sequencerData != null && sequencerData.getSectionNames().Length > 0)
+        if (sequencerData != null && ((SequencerData)SequencerData.get()).getSectionNames().Length > 0)
         { 
             EditorGUILayout.BeginHorizontal();
             {
                 GUILayout.Label("Select Section:");
-                lastSelectedSection = EditorGUILayout.Popup(lastSelectedSection, sequencerData.getSectionNames(), GUILayout.Width(100));
+                lastSelectedSection = EditorGUILayout.Popup(lastSelectedSection, ((SequencerData)SequencerData.get()).getSectionNames(), GUILayout.Width(100));
     
                 GUILayout.Label("Rename to this:");
                 lastSelectedSectionName = GUILayout.TextField(lastSelectedSectionName);
     
                 if (GUILayout.Button("Rename this Section"))
-                    doRenameSection(sequencerData.getSectionNames() [lastSelectedSection], lastSelectedSectionName);    
+                    doRenameSection(((SequencerData)SequencerData.get()).getSectionNames() [lastSelectedSection], lastSelectedSectionName);    
         
                 if (GUILayout.Button("Delete this Section"))
-                    doDeleteSection(sequencerData.getSectionNames() [lastSelectedSection]); 
+                    doDeleteSection(((SequencerData)SequencerData.get()).getSectionNames() [lastSelectedSection]); 
             }  
             EditorGUILayout.EndHorizontal(); 
         }  
@@ -242,14 +243,14 @@ public class SequencerWindow : EditorWindow
         //spacer 
         GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
         
-        if (lastSelectedSection > -1 && lastSelectedSection < sequencerData.sections.Count && sequencerData.sections [lastSelectedSection] != null && sequencerData.sections [lastSelectedSection].commandList != null)
+        if (lastSelectedSection > -1 && lastSelectedSection < ((SequencerData)SequencerData.get()).sections.Count && ((SequencerData)SequencerData.get()).sections [lastSelectedSection] != null && ((SequencerData)SequencerData.get()).sections [lastSelectedSection].commandList != null)
         {      
             scrollPosSections = EditorGUILayout.BeginScrollView(scrollPosSections);
             {   
                 EditorGUILayout.BeginVertical();
                 {
-                    SequencerCommandBase[] tempCommands = new SequencerCommandBase[sequencerData.sections [lastSelectedSection].commandList.Count]; 
-                    sequencerData.sections [lastSelectedSection].commandList.CopyTo(tempCommands);
+                    SequencerCommandBase[] tempCommands = new SequencerCommandBase[((SequencerData)SequencerData.get()).sections [lastSelectedSection].commandList.Count]; 
+                    ((SequencerData)SequencerData.get()).sections [lastSelectedSection].commandList.CopyTo(tempCommands);
 
                     for (int i = 0; i < tempCommands.Length; i++)
                     {
@@ -277,11 +278,11 @@ public class SequencerWindow : EditorWindow
     //note this deletes all found with same target ( in general we dont want duplicate targets anyway)
     void doDeleteTarget(GameObject targetObject)
     {
-        for (int i = sequencerData.targets.Count-1; i > -1; i--)
+        for (int i = ((SequencerData)SequencerData.get()).targets.Count-1; i > -1; i--)
         {
-            if (targetObject == sequencerData.targets [i].target)
+            if (targetObject == ((SequencerData)SequencerData.get()).targets [i].target)
             {
-                sequencerData.targets.Remove(sequencerData.targets [i]);
+                ((SequencerData)SequencerData.get()).targets.Remove(((SequencerData)SequencerData.get()).targets [i]);
             }
         }
     }
@@ -289,12 +290,12 @@ public class SequencerWindow : EditorWindow
     //note this deletes all found with same name ( in general we dont want duplicates names anyway)
     void doDeleteSection(string sectionName)
     {
-        for (int i = sequencerData.sections.Count-1; i > -1; i--)
+        for (int i = ((SequencerData)SequencerData.get()).sections.Count-1; i > -1; i--)
         {
-            if (sectionName == sequencerData.sections [i].name)
+            if (sectionName == ((SequencerData)SequencerData.get()).sections [i].name)
             {
-                SequencerSectionModel section = sequencerData.sections [i];
-                sequencerData.sections.Remove(sequencerData.sections [i]);
+                SequencerSectionModel section = ((SequencerData)SequencerData.get()).sections [i];
+                ((SequencerData)SequencerData.get()).sections.Remove(((SequencerData)SequencerData.get()).sections [i]);
 
                 foreach (SequencerCommandBase command in section.commandList)
                 {
@@ -307,11 +308,11 @@ public class SequencerWindow : EditorWindow
     //note this renames all with same name
     void doRenameSection(string sectionName, string newName)
     {
-        for (int i = sequencerData.sections.Count-1; i > -1; i--)
+        for (int i = ((SequencerData)SequencerData.get()).sections.Count-1; i > -1; i--)
         {
-            if (sectionName == sequencerData.sections [i].name)
+            if (sectionName == ((SequencerData)SequencerData.get()).sections [i].name)
             {
-                sequencerData.sections [i].name = newName;
+                ((SequencerData)SequencerData.get()).sections [i].name = newName;
             }
         }
     }
@@ -326,9 +327,9 @@ public class SequencerWindow : EditorWindow
 
         Type type = SequencerCommandTypes.commandTypes [typeIndex];
         ScriptableObject temp = ScriptableObject.CreateInstance(type);
-        ((SequencerCommandBase)temp).init(sectionIndex, sequencerData);
+        ((SequencerCommandBase)temp).init(sectionIndex);
 
-        sequencerData.sections [sectionIndex].commandList.Add((SequencerCommandBase)temp);
+        ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Add((SequencerCommandBase)temp);
 
         ((SequencerCommandBase)temp).updateAllIndex();
     }
@@ -343,18 +344,18 @@ public class SequencerWindow : EditorWindow
         
         Type type = SequencerCommandTypes.commandTypes [typeIndex];
         ScriptableObject temp = ScriptableObject.CreateInstance(type);
-        ((SequencerCommandBase)temp).init(sectionIndex, sequencerData);
+        ((SequencerCommandBase)temp).init(sectionIndex);
         
-        insertIndex = Mathf.Clamp(insertIndex, 0, sequencerData.sections [sectionIndex].commandList.Count);
+        insertIndex = Mathf.Clamp(insertIndex, 0, ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Count);
 
-        sequencerData.sections [sectionIndex].commandList.Insert(insertIndex, (SequencerCommandBase)temp);
+        ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Insert(insertIndex, (SequencerCommandBase)temp);
     }
 
     void doAddNewTarget()
     {
         SequencerTargetModel model = new SequencerTargetModel();
         model.nickname = "target_" + UnityEngine.Random.Range(0, int.MaxValue).ToString();
-        sequencerData.targets.Add(model);
+        ((SequencerData)SequencerData.get()).targets.Add(model);
     }
 
     void doAddNewSection()
@@ -362,7 +363,7 @@ public class SequencerWindow : EditorWindow
         SequencerSectionModel model = new SequencerSectionModel();
         model.name = "section_" + UnityEngine.Random.Range(0, int.MaxValue).ToString();
         model.commandList = new List<SequencerCommandBase>();
-        sequencerData.sections.Add(model);
+        ((SequencerData)SequencerData.get()).sections.Add(model);
     }
 
     void Update()
@@ -372,16 +373,5 @@ public class SequencerWindow : EditorWindow
             dataHolderValGoLastVal = dataHolderGO;
             testForData();
         }
-    }
-
-    void doFixCommands()
-    {
-        foreach (SequencerSectionModel section in sequencerData.sections)
-        {
-            foreach (SequencerCommandBase command in section.commandList)
-            {
-                command.sequencerData = sequencerData;
-            } 
-        } 
     }
 }

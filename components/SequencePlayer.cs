@@ -6,8 +6,7 @@ using System;
 public class SequencePlayer : MonoBehaviour
 {
     public string startingScene; 
-    public SequencerData sequencerData;    
-
+    
     private int currSceneIndex = -1;
     private int currCommandIndex = -1;
 
@@ -21,9 +20,9 @@ public class SequencePlayer : MonoBehaviour
 
     void Start()
     {
-        for (int i = 0; i < sequencerData.sections.Count; i++)
+        for (int i = 0; i < ((SequencerData)SequencerData.get()).sections.Count; i++)
         {
-            if (sequencerData.sections [i].name == startingScene)
+            if (((SequencerData)SequencerData.get()).sections [i].name == startingScene)
             {
                 currSceneIndex = i;
                 currCommandIndex = 0;
@@ -44,8 +43,8 @@ public class SequencePlayer : MonoBehaviour
     //Executes the current command we are on
     public void play()
     {   
-        Debug.Log("Play Section :" + "( " + currSceneIndex + ") " + sequencerData.sections [currSceneIndex].name + " command: " + "(" + currCommandIndex + " ) " + sequencerData.sections [currSceneIndex].commandList [currCommandIndex].name);
-        sequencerData.sections [currSceneIndex].commandList [currCommandIndex].execute(this);
+        Debug.Log("Play Section :" + "( " + currSceneIndex + ") " + ((SequencerData)SequencerData.get()).sections [currSceneIndex].name + " command: " + "(" + currCommandIndex + " ) " + ((SequencerData)SequencerData.get()).sections [currSceneIndex].commandList [currCommandIndex].name);
+        ((SequencerData)SequencerData.get()).sections [currSceneIndex].commandList [currCommandIndex].execute(this);
     }
     
     //sets one command forward and executes
@@ -53,9 +52,9 @@ public class SequencePlayer : MonoBehaviour
     {
         inRewindMode = false;
 
-        sequencerData.sections [currSceneIndex].commandList [currCommandIndex].forward(this);
+        ((SequencerData)SequencerData.get()).sections [currSceneIndex].commandList [currCommandIndex].forward(this);
 
-        if (currCommandIndex + 1 == sequencerData.sections [currSceneIndex].commandList.Count)
+        if (currCommandIndex + 1 == ((SequencerData)SequencerData.get()).sections [currSceneIndex].commandList.Count)
         {
             Debug.Log("END of Sequence! or reached end of Section with out a jump.");
         } else
@@ -70,7 +69,7 @@ public class SequencePlayer : MonoBehaviour
     {
         inRewindMode = true;
 
-        sequencerData.sections [currSceneIndex].commandList [currCommandIndex].backward(this);
+        ((SequencerData)SequencerData.get()).sections [currSceneIndex].commandList [currCommandIndex].backward(this);
 
         if (currCommandIndex - 1 == -1)
         {
@@ -107,7 +106,7 @@ public class SequencePlayer : MonoBehaviour
                 currSceneIndex = previousSceneList [previousSceneList.Count - 1];
                 previousSceneList.RemoveAt(previousSceneList.Count - 1);
 
-                currCommandIndex = sequencerData.sections [currSceneIndex].commandList.Count - 1;   
+                currCommandIndex = ((SequencerData)SequencerData.get()).sections [currSceneIndex].commandList.Count - 1;   
                 play();
             } else
             {
@@ -118,7 +117,7 @@ public class SequencePlayer : MonoBehaviour
         } else
         {
             previousSceneList.Add(currSceneIndex);
-            currSceneIndex = Array.IndexOf(sequencerData.getSectionNames(), nameToJumpTo);
+            currSceneIndex = Array.IndexOf(((SequencerData)SequencerData.get()).getSectionNames(), nameToJumpTo);
             currCommandIndex = commandIndex;
             play();
         }

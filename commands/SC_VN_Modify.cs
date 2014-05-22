@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-
 #if UNITY_EDITOR
-using UnityEditor;
+ using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -16,10 +15,12 @@ using System;
 public class SC_VN_Modify : SequencerCommandBase
 {
     public int targetIndexList = 0;
+
     public int attireListIndex = 0;
     public int expressionListIndex = 0;
     public string expressionName;
     public string prevExpressionName;
+
     private int prevAttireIndex = 0;
    
     override public void initChild()
@@ -35,7 +36,7 @@ public class SC_VN_Modify : SequencerCommandBase
             undo();
         } else
         {
-            GameObject target = sequencerData.targets [targetIndexList].target;
+            GameObject target = ((SequencerData)SequencerData.get()).targets [targetIndexList].target;
             VN_CharBase charcomp = target.GetComponent<VN_CharBase>();
 
             prevAttireIndex = charcomp.getCurrentAttire();
@@ -50,7 +51,7 @@ public class SC_VN_Modify : SequencerCommandBase
     
     override public void undo()
     {
-        GameObject target = sequencerData.targets [targetIndexList].target;
+        GameObject target = ((SequencerData)SequencerData.get()).targets [targetIndexList].target;
         VN_CharBase charcomp = target.GetComponent<VN_CharBase>();
 
         charcomp.setAttire(prevAttireIndex);
@@ -69,14 +70,14 @@ public class SC_VN_Modify : SequencerCommandBase
 #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
-        string[] nicks = sequencerData.getTargetNickNames();
+        string[] nicks = ((SequencerData)SequencerData.get()).getTargetNickNames();
         
         GUILayout.Label("modify who?:");
         targetIndexList = EditorGUILayout.Popup(targetIndexList, nicks, GUILayout.Width(100));
 
-        if (sequencerData.targets [targetIndexList] != null)
+        if (((SequencerData)SequencerData.get()).targets [targetIndexList] != null)
         {
-            VN_CharBase charcomp = sequencerData.targets [targetIndexList].target.GetComponent<VN_CharBase>();
+            VN_CharBase charcomp = ((SequencerData)SequencerData.get()).targets [targetIndexList].target.GetComponent<VN_CharBase>();
             
             if (charcomp != null)
             {
