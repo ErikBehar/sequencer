@@ -16,9 +16,12 @@ public class SequencerCommandBase : ScriptableObject
     private int targetIndex = -1;
     protected SequencePlayer myPlayer;
 
-    public void init(int in_sectionIndex)
+    public SequencerData sequencerData;
+
+    public void init(int in_sectionIndex, SequencerData data)
     {
         sectionIndex = in_sectionIndex;
+        sequencerData = data;
         name = this.GetType().Name;
 
         initChild();
@@ -93,9 +96,9 @@ public class SequencerCommandBase : ScriptableObject
     {
         if (newPos > -1)
         {
-            newPos = Mathf.Clamp(newPos, 0, ((SequencerData)((SequencerData)SequencerData.get())).sections [sectionIndex].commandList.Count - 1);
-            ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Remove(this);
-            ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Insert(newPos, this);
+            newPos = Mathf.Clamp(newPos, 0, sequencerData.sections [sectionIndex].commandList.Count - 1);
+            sequencerData.sections [sectionIndex].commandList.Remove(this);
+            sequencerData.sections [sectionIndex].commandList.Insert(newPos, this);
         
             updateAllIndex();
         }
@@ -104,12 +107,12 @@ public class SequencerCommandBase : ScriptableObject
     public void doReorder(int direction)
     {
         int oldIndex = findIndexOf(this);
-        int newIndex = Mathf.Clamp(oldIndex + direction, 0, ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Count - 1);
+        int newIndex = Mathf.Clamp(oldIndex + direction, 0, sequencerData.sections [sectionIndex].commandList.Count - 1);
         
         if (newIndex != oldIndex)
         {
-            ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Remove(this);
-            ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Insert(newIndex, this);
+            sequencerData.sections [sectionIndex].commandList.Remove(this);
+            sequencerData.sections [sectionIndex].commandList.Insert(newIndex, this);
         
             updateAllIndex();
         }
@@ -117,11 +120,11 @@ public class SequencerCommandBase : ScriptableObject
 
     public void deleteThisCommand()
     {
-        foreach (SequencerCommandBase command in ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList)
+        foreach (SequencerCommandBase command in sequencerData.sections [sectionIndex].commandList)
         {
             if (command.GetInstanceID() == this.GetInstanceID())
             {
-                ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Remove(command);
+                sequencerData.sections [sectionIndex].commandList.Remove(command);
                 DestroyImmediate(command);
 
                 updateAllIndex();
@@ -132,9 +135,9 @@ public class SequencerCommandBase : ScriptableObject
 
     public int findIndexOf(SequencerCommandBase command)
     {
-        for (int i = 0; i < ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Count; i++)
+        for (int i = 0; i < sequencerData.sections [sectionIndex].commandList.Count; i++)
         {
-            if (((SequencerData)SequencerData.get()).sections [sectionIndex].commandList [i].GetInstanceID() == command.GetInstanceID())
+            if (sequencerData.sections [sectionIndex].commandList [i].GetInstanceID() == command.GetInstanceID())
             {
                 return i;
             }
@@ -144,10 +147,10 @@ public class SequencerCommandBase : ScriptableObject
 
     public void updateAllIndex()
     {
-        for (int i = 0; i < ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList.Count; i++)
+        for (int i = 0; i < sequencerData.sections [sectionIndex].commandList.Count; i++)
         {
-            ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList [i].listIndex = i;
-            ((SequencerData)SequencerData.get()).sections [sectionIndex].commandList [i].currIndex = i;
+            sequencerData.sections [sectionIndex].commandList [i].listIndex = i;
+            sequencerData.sections [sectionIndex].commandList [i].currIndex = i;
         } 
     }
 }

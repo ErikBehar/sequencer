@@ -8,18 +8,6 @@ public class SequencerData : MonoBehaviour
 {
     public List<SequencerTargetModel> targets = new List<SequencerTargetModel>();
     public List<SequencerSectionModel> sections = new List<SequencerSectionModel>();
-    
-    static private SequencerData _instance = null;
-
-    public static MonoBehaviour get()
-    {
-        return _instance;
-    }
-
-    void Awake()
-    {        
-        _instance = this;
-    }
 
     public string[] getSectionNames()
     {
@@ -28,10 +16,10 @@ public class SequencerData : MonoBehaviour
         {
             names [i] = sections [i].name;   
         }
-
+        
         return names;
     }
-
+    
     public string[] getTargetNickNames()
     {
         string[] names = new string[targets.Count];

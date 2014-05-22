@@ -20,13 +20,26 @@ public class NguiDialogBubble : MonoBehaviour
 
     public int textLineSize = 30;
 
+    public GameObject leftBubbleEdge;
+    public float leftBubbleOriginalDifference;
+
+    public GameObject rightBubbleEdge;
+    public float rightBubbleOriginalDifference;
+
+    private bool shown = false;
+
     void Awake()
     {
         hideDialog();
+
+        leftBubbleOriginalDifference = (leftBubbleEdge.transform.position - speechBubbleLeft.transform.position).x;
+
+        rightBubbleOriginalDifference = (rightBubbleEdge.transform.position - speechBubbleRight.transform.position).x;
     }
 
     public void showDialog(string text, GameObject charspeaker)
     {
+        shown = true;
         text = chopTextIntoPieces(textLineSize, text);
 
         if (charspeaker.transform.localPosition.x > 1)
@@ -69,8 +82,25 @@ public class NguiDialogBubble : MonoBehaviour
 
     public void hideDialog()
     {
+        shown = false;
         speechBubbleRight.SetActive(false);
         speechBubbleLeft.SetActive(false);
         narratorBubble.SetActive(false);
+    }
+
+    void FixedUpdate()
+    {
+        if (shown)
+        {
+            float newdifference = leftBubbleOriginalDifference - (leftBubbleEdge.transform.position - leftPos.gameObject.transform.position).x; 
+            if (Mathf.Abs(newdifference) > .03f)
+                speechBubbleLeft.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleLeft.gameObject.transform.position.x, speechBubbleLeft.gameObject.transform.position.x + newdifference, .25f),
+                                                                          leftPos.gameObject.transform.position.y, leftPos.gameObject.transform.position.z);
+
+            newdifference = rightBubbleOriginalDifference - (rightBubbleEdge.transform.position - rightPos.gameObject.transform.position).x; 
+            if (Mathf.Abs(newdifference) > .03f)
+                speechBubbleRight.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleRight.gameObject.transform.position.x, speechBubbleRight.gameObject.transform.position.x + newdifference, .25f),
+                                                                             rightPos.gameObject.transform.position.y, rightPos.gameObject.transform.position.z);
+        }
     }
 }

@@ -37,7 +37,7 @@ public class SC_Jump : SequencerCommandBase
             undo();
         } else
         {
-            string[] nicks = ((SequencerData)SequencerData.get()).getSectionNames();
+            string[] nicks = sequencerData.getSectionNames();
             myPlayer.jumpToScene(nicks [targetSectionIndex], commandIndex);
         }
     }
@@ -57,7 +57,7 @@ public class SC_Jump : SequencerCommandBase
 #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
-        string[] nicks = ((SequencerData)SequencerData.get()).getSectionNames();
+        string[] nicks = sequencerData.getSectionNames();
         
         GUILayout.Label("Jump to Section:");
         targetSectionIndex = EditorGUILayout.Popup(targetSectionIndex, nicks, GUILayout.Width(100));
@@ -65,7 +65,7 @@ public class SC_Jump : SequencerCommandBase
         if (targetSectionIndex != previousTargetSectionIndex)
         {
             previousTargetSectionIndex = targetSectionIndex;
-            int[] numberRange = Enumerable.Range(0, ((SequencerData)SequencerData.get()).sections [targetSectionIndex].commandList.Count).ToArray();
+            int[] numberRange = Enumerable.Range(0, sequencerData.sections [targetSectionIndex].commandList.Count).ToArray();
             commandIndexes = new string[numberRange.Length];
             for (int i = 0; i < numberRange.Length; i++)
             {

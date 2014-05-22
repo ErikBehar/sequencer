@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+
 #if UNITY_EDITOR
- using UnityEditor;
+using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -35,7 +36,7 @@ public class SC_VN_Dialog : SequencerCommandBase
             SoundManager.Get().playSfx(audioClip.name, volume);
         }
 
-        GameObject target = ((SequencerData)SequencerData.get()).targets [speakerTargetIndex].target;
+        GameObject target = sequencerData.targets [speakerTargetIndex].target;
         myPlayer.dialogController.showDialog(text, target);
     
         myPlayer.inRewindMode = false;
@@ -48,7 +49,7 @@ public class SC_VN_Dialog : SequencerCommandBase
             SoundManager.Get().stopPlayingSoundList(new List<string>(){audioClip.name});
 
         myPlayer.dialogController.hideDialog();
-    } 
+    }
 
     override public void forward(SequencePlayer player)
     {
@@ -63,7 +64,7 @@ public class SC_VN_Dialog : SequencerCommandBase
     #if UNITY_EDITOR 
     override public void drawCustomUi()
     { 
-        string[] nicks = ((SequencerData)SequencerData.get()).getTargetNickNames();
+        string[] nicks = sequencerData.getTargetNickNames();
         GUILayout.Label("Speech Target:");
         speakerTargetIndex = EditorGUILayout.Popup(speakerTargetIndex, nicks, GUILayout.Width(100));
 
