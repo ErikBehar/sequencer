@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+
 #if UNITY_EDITOR
- using UnityEditor;
+using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -17,7 +18,6 @@ public class SC_PlayMusic : SequencerCommandBase
 {
     public AudioClip audioClip;
     public float volume = 1.0f;
-
     private string previousPlayingMusicClipName;
     private float previousVolume;
 
@@ -47,7 +47,10 @@ public class SC_PlayMusic : SequencerCommandBase
     
     override public void undo()
     {
-        SoundManager.Get().playMusic(previousPlayingMusicClipName, previousVolume);
+        if (previousPlayingMusicClipName == "notarealmusicclip")
+            SoundManager.Get().fadeOutMusic();
+        else
+            SoundManager.Get().playMusic(previousPlayingMusicClipName, previousVolume);
     }
 
     override public void forward(SequencePlayer player)

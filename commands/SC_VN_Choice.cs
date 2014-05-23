@@ -33,19 +33,37 @@ public class SC_VN_Choice : SequencerCommandBase
             undo();
         } else
         {
-            //TODO
+            showChoices();
         }
         
         myPlayer.inRewindMode = false;
         myPlayer.callBackFromCommand(true); 
     }
+
+    private void showChoices()
+    {
+        string[] nicks = sequencerData.getSectionNames();   
+        List<ChoiceModel> choices = new List<ChoiceModel>();
+        for (int i = 0; i < sectionIndexList.Count; i++)
+        {
+            ChoiceModel model = new ChoiceModel();
+            model.text = optionTextList [i];
+            model.sceneNameToJump = nicks [sectionIndexList [i]];
+            model.sceneCommandIndexToJump = 0;
+            choices.Add(model);
+        }
+        
+        myPlayer.choiceController.generateButtons(choices, myPlayer);
+    }
     
     override public void undo()
     {
+        showChoices();
     }
 
     override public void forward(SequencePlayer player)
     {
+        //?this probably never gets called ?
     }
     
     override public void backward(SequencePlayer player)
@@ -72,7 +90,7 @@ public class SC_VN_Choice : SequencerCommandBase
                     EditorGUILayout.BeginHorizontal();
                     {
                         GUILayout.Label("Option Text:");
-                        EditorGUILayout.TextField(optionTextList [i]);
+                        optionTextList [i] = EditorGUILayout.TextField(optionTextList [i]);
 
                         GUILayout.Label("Jump to:");
                         sectionIndexList [i] = EditorGUILayout.Popup(sectionIndexList [i], nicks, GUILayout.Width(100));

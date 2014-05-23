@@ -18,6 +18,7 @@ public class SequencePlayer : MonoBehaviour
         inRewindMode = false;
 
     public NguiDialogBubble dialogController;
+    public NguiChoiceButtons choiceController;
 
     void Start()
     {

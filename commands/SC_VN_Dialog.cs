@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
-
 #if UNITY_EDITOR
 using UnityEditor;
- #endif
+#endif
 using System.Collections;
 using System;
 
@@ -67,18 +66,18 @@ public class SC_VN_Dialog : SequencerCommandBase
         string[] nicks = sequencerData.getTargetNickNames();
         GUILayout.Label("Speech Target:");
         speakerTargetIndex = EditorGUILayout.Popup(speakerTargetIndex, nicks, GUILayout.Width(100));
-
+    
         GUILayout.Label("Text:"); 
         text = EditorGUILayout.TextField(text);
-            
+                
         GUILayout.Label("Time:"); 
         time = EditorGUILayout.FloatField(time);
-
+    
         GUILayout.Label("Voice Over audio clip:");
         audioClip = EditorGUILayout.ObjectField(audioClip, typeof(AudioClip), true) as AudioClip;  
-        
+            
         GUILayout.Label("Volume 0 - 1.0:"); 
         volume = EditorGUILayout.FloatField(volume);
     }
-#endif
+    #endif
 }
