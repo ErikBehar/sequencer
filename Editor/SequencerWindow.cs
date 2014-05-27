@@ -125,9 +125,19 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         {
             GUILayout.Label("Drag & Drop object that holds data here:");
+            if (GUILayout.Button("Find"))
+                dataHolderGO = findDataHolderGo();
             dataHolderGO = EditorGUILayout.ObjectField(dataHolderGO, typeof(GameObject), true) as GameObject;       
         }   
         EditorGUILayout.EndHorizontal();    
+    }
+
+    private GameObject findDataHolderGo()
+    {
+        SequencerData data = SceneView.FindObjectOfType<SequencerData>();
+        if (data != null)
+            return data.gameObject;
+        return null;
     }
 
     private void drawUiAreas()

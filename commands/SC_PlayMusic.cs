@@ -16,6 +16,9 @@ using System;
 [Serializable]
 public class SC_PlayMusic : SequencerCommandBase
 {
+    public override string commandId{ get { return "playMusic"; } }
+    public override string commandType{ get { return "base"; } }
+
     public AudioClip audioClip;
     public float volume = 1.0f;
     private string previousPlayingMusicClipName;
@@ -47,7 +50,7 @@ public class SC_PlayMusic : SequencerCommandBase
     
     override public void undo()
     {
-        if (previousPlayingMusicClipName == "notarealmusicclip")
+        if (previousPlayingMusicClipName == SoundManager.nullSoundName)
             SoundManager.Get().fadeOutMusic();
         else
             SoundManager.Get().playMusic(previousPlayingMusicClipName, previousVolume);

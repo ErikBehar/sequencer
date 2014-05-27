@@ -5,6 +5,7 @@ using System;
 [Serializable]
 public class SequencerTargetModel
 {
+    public string type;
     public GameObject target;
     public string nickname; 
 

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+
 #if UNITY_EDITOR
- using UnityEditor;
+using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -13,8 +14,11 @@ using System;
 [Serializable]
 public class SC_StopMusic : SequencerCommandBase
 {
-    public float fadeTime = 1f;
+    public override string commandId{ get { return "stopMusic"; } }
 
+    public override string commandType{ get { return "base"; } }
+
+    public float fadeTime = 1f;
     private string previousPlayingMusicClipName;
     private float previousFadeTime;
     private float previousVolume;

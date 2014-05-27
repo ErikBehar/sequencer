@@ -19,6 +19,9 @@ using Holoville.HOTween;
 [Serializable]
 public class SC_VN_Show : SequencerCommandBase
 {
+    public override string commandId{ get { return "show"; } }
+    public override string commandType{ get { return "base"; } }
+
     public bool useFrom = false;
     public int lastSelectedWho = 0;
     public int lastSelectedFrom = -1;

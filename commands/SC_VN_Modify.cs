@@ -15,6 +15,9 @@ using System;
 [Serializable]
 public class SC_VN_Modify : SequencerCommandBase
 {
+    public override string commandId{ get { return "modify"; } }
+    public override string commandType{ get { return "base"; } }
+
     public int targetIndexList = 0;
     public int attireListIndex = 0;
     public int expressionListIndex = 0;

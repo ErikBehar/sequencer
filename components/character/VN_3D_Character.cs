@@ -48,7 +48,10 @@ public class VN_3D_Character : VN_CharBase
     
     public override void setExpression(string name)
     {
-        animation.CrossFade(name);
+        if (animation [name] != null)
+            animation.CrossFade(name);
+        else
+            Debug.LogWarning("Couldnt set anim: " + name + " cause possibly not active ?");
     }
     
     public override int getCurrentAttire()

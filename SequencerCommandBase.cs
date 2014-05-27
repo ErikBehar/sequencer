@@ -10,6 +10,9 @@ using System.Reflection;
 [Serializable]
 public class SequencerCommandBase : ScriptableObject
 {
+    public virtual string commandId { get { return "base"; } }
+    public virtual string commandType { get { return "base-abstract"; } }
+
     public int sectionIndex = -1;
     private int listIndex = -1;
     private int currIndex = -1;

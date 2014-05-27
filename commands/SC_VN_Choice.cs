@@ -16,6 +16,9 @@ using System.Linq;
 [Serializable]
 public class SC_VN_Choice : SequencerCommandBase
 {
+    public override string commandId{ get { return "choice"; } }
+    public override string commandType{ get { return "base"; } }
+
     public int size = 0;
     public List<int> sectionIndexList;
     public List<string> optionTextList;
@@ -27,17 +30,8 @@ public class SC_VN_Choice : SequencerCommandBase
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;
-        
-        if (player.inRewindMode)
-        {
-            undo();
-        } else
-        {
-            showChoices();
-        }
-        
+        showChoices();
         myPlayer.inRewindMode = false;
-        myPlayer.callBackFromCommand(true); 
     }
 
     private void showChoices()
@@ -58,12 +52,13 @@ public class SC_VN_Choice : SequencerCommandBase
     
     override public void undo()
     {
-        showChoices();
+        myPlayer.choiceController.cleanup();
     }
 
     override public void forward(SequencePlayer player)
     {
-        //?this probably never gets called ?
+        //nothing, it blocks
+        myPlayer.blockForward = true;
     }
     
     override public void backward(SequencePlayer player)

@@ -19,6 +19,9 @@ using System.Linq;
 [Serializable]
 public class SC_Jump : SequencerCommandBase
 {
+    public override string commandId{ get { return "jump"; } }
+    public override string commandType{ get { return "base"; } }
+
     public int targetSectionIndex = 0;
     public int commandIndex = 0;
 

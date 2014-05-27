@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
+
 #if UNITY_EDITOR
- using UnityEditor;
+using UnityEditor;
  #endif
 using System.Collections;
 using System;
 using System.Collections.Generic;
+
 /// <summary>
 /// Play SFX Sequencer Command
 // Plays a sound Effect 
@@ -15,6 +17,10 @@ using System.Collections.Generic;
 [Serializable]
 public class SC_PlaySfx : SequencerCommandBase
 {
+    public override string commandId{ get { return "playSfx"; } }
+
+    public override string commandType{ get { return "base"; } }
+
     public AudioClip audioClip;
     public float volume = 1.0f;
 

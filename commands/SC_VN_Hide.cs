@@ -18,6 +18,9 @@ using Holoville.HOTween;
 [Serializable]
 public class SC_VN_Hide : SequencerCommandBase
 {
+    public override string commandId{ get { return "hide"; } }
+    public override string commandType{ get { return "base"; } }
+
     public bool useTo = false;
     public int lastSelectedWho = 0;
     public int lastSelectedTo = -1;

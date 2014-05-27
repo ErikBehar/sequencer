@@ -14,6 +14,9 @@ using System.Collections.Generic;
 [Serializable]
 public class SC_VN_Dialog : SequencerCommandBase
 {
+    public override string commandId{ get { return "dialog"; } }
+    public override string commandType{ get { return "base"; } }
+
     public int speakerTargetIndex;
     public string text;
     public float time = 0f;

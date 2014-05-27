@@ -47,8 +47,8 @@ public class NguiChoiceButtons : MonoBehaviour
         {
             if (model.text == UIButton.current.gameObject.transform.FindChild("Label").GetComponent<UILabel>().text)
             {
-                currentPlayer.jumpToScene(model.sceneNameToJump, model.sceneCommandIndexToJump);
                 cleanup();
+                currentPlayer.jumpToScene(model.sceneNameToJump, model.sceneCommandIndexToJump);
                 break;
             }
         }

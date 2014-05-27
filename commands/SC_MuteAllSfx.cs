@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+
 #if UNITY_EDITOR
- using UnityEditor;
+using UnityEditor;
  #endif
 using System.Collections;
 using System;
@@ -12,6 +13,10 @@ using System;
 [Serializable]
 public class SC_MuteAllSfx : SequencerCommandBase
 {
+    public override string commandId{ get { return "muteSfx"; } }
+
+    public override string commandType{ get { return "base"; } }
+
     override public void initChild()
     {
     }
@@ -33,7 +38,7 @@ public class SC_MuteAllSfx : SequencerCommandBase
     
     override public void undo()
     {
-    } 
+    }
 
     override public void forward(SequencePlayer player)
     {

@@ -11,7 +11,8 @@ public class SequencePlayer : MonoBehaviour
     private int currSceneIndex = -1;
     private int currCommandIndex = -1;
 
-    private List<int> previousSceneList; //TODO also save the command index, so that we can go back in weird cases  
+    private List<int> previousSceneList; 
+    private List<int> previousCommandIndexList; 
 
     [HideInInspector]
     public bool
@@ -19,6 +20,8 @@ public class SequencePlayer : MonoBehaviour
 
     public NguiDialogBubble dialogController;
     public NguiChoiceButtons choiceController;
+
+    public bool blockForward = false;
 
     void Start()
     {
@@ -35,6 +38,7 @@ public class SequencePlayer : MonoBehaviour
         if (currSceneIndex != -1)
         {
             previousSceneList = new List<int>();
+            previousCommandIndexList = new List<int>();
             play();
         } else
         {   
@@ -56,13 +60,20 @@ public class SequencePlayer : MonoBehaviour
 
         sequencerData.sections [currSceneIndex].commandList [currCommandIndex].forward(this);
 
-        if (currCommandIndex + 1 == sequencerData.sections [currSceneIndex].commandList.Count)
+        if (blockForward)
         {
-            Debug.Log("END of Sequence! or reached end of Section with out a jump.");
+            blockForward = false;
+                
         } else
         {
-            currCommandIndex += 1;
-            play();
+            if (currCommandIndex + 1 == sequencerData.sections [currSceneIndex].commandList.Count)
+            {
+                Debug.Log("END of Sequence! or reached end of Section with out a jump.");
+            } else
+            {
+                currCommandIndex += 1;
+                play();
+            }
         }
     }
 
@@ -108,7 +119,8 @@ public class SequencePlayer : MonoBehaviour
                 currSceneIndex = previousSceneList [previousSceneList.Count - 1];
                 previousSceneList.RemoveAt(previousSceneList.Count - 1);
 
-                currCommandIndex = sequencerData.sections [currSceneIndex].commandList.Count - 1;   
+                currCommandIndex = previousCommandIndexList [previousCommandIndexList.Count - 1];
+                previousCommandIndexList.RemoveAt(previousCommandIndexList.Count - 1);   
                 play();
             } else
             {
@@ -119,6 +131,8 @@ public class SequencePlayer : MonoBehaviour
         } else
         {
             previousSceneList.Add(currSceneIndex);
+            previousCommandIndexList.Add(currCommandIndex);
+
             currSceneIndex = Array.IndexOf(sequencerData.getSectionNames(), nameToJumpTo);
             currCommandIndex = commandIndex;
             play();
