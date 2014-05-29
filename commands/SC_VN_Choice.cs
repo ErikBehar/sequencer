@@ -17,11 +17,13 @@ using System.Linq;
 public class SC_VN_Choice : SequencerCommandBase
 {
     public override string commandId{ get { return "choice"; } }
+
     public override string commandType{ get { return "base"; } }
 
     public int size = 0;
     public List<int> sectionIndexList;
     public List<string> optionTextList;
+    public List<int> commandIndexList;
    
     override public void initChild()
     {
@@ -43,7 +45,7 @@ public class SC_VN_Choice : SequencerCommandBase
             ChoiceModel model = new ChoiceModel();
             model.text = optionTextList [i];
             model.sceneNameToJump = nicks [sectionIndexList [i]];
-            model.sceneCommandIndexToJump = 0;
+            model.sceneCommandIndexToJump = commandIndexList [i];
             choices.Add(model);
         }
         
@@ -76,7 +78,7 @@ public class SC_VN_Choice : SequencerCommandBase
         {
             makeSureListsAreCorrectSize(); 
            
-            string[] nicks = sequencerData.getSectionNames();            
+            string[] nicks = sequencerData.getSectionNames();           
 
             EditorGUILayout.BeginVertical();
             {
@@ -87,8 +89,17 @@ public class SC_VN_Choice : SequencerCommandBase
                         GUILayout.Label("Option Text:");
                         optionTextList [i] = EditorGUILayout.TextField(optionTextList [i]);
 
-                        GUILayout.Label("Jump to:");
+                        GUILayout.Label("Jump to Section:");
                         sectionIndexList [i] = EditorGUILayout.Popup(sectionIndexList [i], nicks, GUILayout.Width(100));
+
+                        int[] commands = Enumerable.Repeat(0, sequencerData.sections [sectionIndexList [i]].commandList.Count).ToArray();
+                        string[] commandStr = new string[commands.Length];
+                        for (int c = 0; c < commands.Length; c++)
+                        {
+                            commandStr [c] = c.ToString();
+                        }   
+                        GUILayout.Label("Jump to command Index:");
+                        commandIndexList [i] = EditorGUILayout.Popup(commandIndexList [i], commandStr);
                     }
                     EditorGUILayout.EndHorizontal();  
                 }
@@ -106,12 +117,19 @@ public class SC_VN_Choice : SequencerCommandBase
         if (optionTextList == null)
             optionTextList = new List<string>(size);
 
+        if (commandIndexList == null)
+            commandIndexList = new List<int>(size);
+
         if (sectionIndexList.Count < size)
             sectionIndexList.AddRange(Enumerable.Repeat(0, size - sectionIndexList.Count).ToList());
+
+        if (commandIndexList.Count < size)
+            commandIndexList.AddRange(Enumerable.Repeat(0, size - commandIndexList.Count).ToList());
         
         if (optionTextList.Count < size)
             optionTextList.AddRange(Enumerable.Repeat("option", size - optionTextList.Count).ToList());
 
+        commandIndexList = commandIndexList.GetRange(0, size);
         sectionIndexList = sectionIndexList.GetRange(0, size);
         optionTextList = optionTextList.GetRange(0, size);
     }
