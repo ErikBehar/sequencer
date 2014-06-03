@@ -43,6 +43,11 @@ public class SC_VN_Hide : SequencerCommandBase
             undo();
         } else
         {
+            if (tween != null && !tween.isComplete)
+            {
+                tween.Kill();
+            }
+
             Transform target = sequencerData.targets [lastSelectedWho].target.transform;
             previousPosition = target.transform.localPosition;
 
@@ -74,7 +79,7 @@ public class SC_VN_Hide : SequencerCommandBase
         {
             Transform from = null;
             from = sequencerData.targets [lastSelectedTo].target.transform;
-            target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            target.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
             tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoCompleteEvt));
         } else
         {
@@ -85,11 +90,32 @@ public class SC_VN_Hide : SequencerCommandBase
 
     override public void forward(SequencePlayer player)
     {
+        if (waitForEndOfTween && tween != null && !tween.isComplete)
+        {
+            tween.Kill();
+
+            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            
+            if (useTo)
+            {
+                Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+                target.localPosition = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            }
+            
+            target.gameObject.SetActive(false);  
+        }
     }
     
     override public void backward(SequencePlayer player)
     {
-        undo();
+        if (waitForEndOfTween && tween != null && !tween.isComplete)
+        {
+            tween.Kill();
+
+            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            target.localPosition = previousPosition;
+            target.gameObject.SetActive(true);  
+        }
     }
 
     public void onExecuteCompleteEvt(TweenEvent evt)
@@ -99,11 +125,6 @@ public class SC_VN_Hide : SequencerCommandBase
     
     public void onExecuteComplete()
     {
-        if (tween != null && !tween.isComplete)
-        {
-            tween.Kill();
-        }
-
         sequencerData.targets [lastSelectedWho].target.SetActive(false);  
         if (waitForEndOfTween)
         {

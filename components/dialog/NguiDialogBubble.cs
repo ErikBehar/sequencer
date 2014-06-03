@@ -18,6 +18,10 @@ public class NguiDialogBubble : MonoBehaviour
     public Transform leftPos;
     public Transform rightPos;
 
+    public Vector3 centerPosVec;
+    public Vector3 leftPosVec;
+    public Vector3 rightPosVec;
+
     public int textLineSize = 30;
 
     public GameObject leftBubbleEdge;
@@ -37,25 +41,28 @@ public class NguiDialogBubble : MonoBehaviour
         rightBubbleOriginalDifference = (rightBubbleEdge.transform.position - speechBubbleRight.transform.position).x;
     }
 
-    public void showDialog(string text, GameObject charspeaker)
+    public void showDialog(string text, GameObject charspeaker, float xOffset)
     {
         shown = true;
         text = chopTextIntoPieces(textLineSize, text);
 
         if (charspeaker.transform.localPosition.x > 1)
-        {
+        {            
             speechTextLabelRight.text = text;
-            speechBubbleRight.transform.localPosition = rightPos.localPosition;
+            rightPosVec = rightPos.position + new Vector3(xOffset, 0, 0);
+            speechBubbleRight.transform.position = rightPosVec;
             speechBubbleRight.SetActive(true);
         } else if (charspeaker.transform.localPosition.x < -1)
         { 
             speechTextLabelLeft.text = text;
-            speechBubbleLeft.transform.localPosition = leftPos.localPosition;
+            leftPosVec = leftPos.position + new Vector3(xOffset, 0, 0);
+            speechBubbleLeft.transform.position = leftPosVec;
             speechBubbleLeft.SetActive(true);
         } else
         {
             narratorTextLabel.text = text;
-            narratorBubble.transform.localPosition = centerPos.localPosition;
+            centerPosVec = centerPos.position + new Vector3(xOffset, 0, 0);
+            narratorBubble.transform.position = centerPosVec;
             narratorBubble.SetActive(true);
         }
     }
@@ -92,15 +99,15 @@ public class NguiDialogBubble : MonoBehaviour
     {
         if (shown)
         {
-            float newdifference = leftBubbleOriginalDifference - (leftBubbleEdge.transform.position - leftPos.gameObject.transform.position).x; 
+            float newdifference = leftBubbleOriginalDifference - (leftBubbleEdge.transform.position - leftPosVec).x; 
             if (Mathf.Abs(newdifference) > .03f)
                 speechBubbleLeft.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleLeft.gameObject.transform.position.x, speechBubbleLeft.gameObject.transform.position.x + newdifference, .25f),
-                                                                          leftPos.gameObject.transform.position.y, leftPos.gameObject.transform.position.z);
+                                                                             leftPosVec.y, leftPosVec.z);
 
-            newdifference = rightBubbleOriginalDifference - (rightBubbleEdge.transform.position - rightPos.gameObject.transform.position).x; 
+            newdifference = rightBubbleOriginalDifference - (rightBubbleEdge.transform.position - rightPosVec).x; 
             if (Mathf.Abs(newdifference) > .03f)
                 speechBubbleRight.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleRight.gameObject.transform.position.x, speechBubbleRight.gameObject.transform.position.x + newdifference, .25f),
-                                                                             rightPos.gameObject.transform.position.y, rightPos.gameObject.transform.position.z);
+                                                                              rightPosVec.y, rightPosVec.z);
         }
     }
 }

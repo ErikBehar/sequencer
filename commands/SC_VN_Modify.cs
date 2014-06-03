@@ -45,7 +45,7 @@ public class SC_VN_Modify : SequencerCommandBase
             prevExpressionName = charcomp.getCurrentExpressionName();
 
             charcomp.setAttire(attireListIndex);
-            charcomp.setExpression(expressionName);            
+            charcomp.setExpression(expressionName, false);            
         }
 
         myPlayer.callBackFromCommand(); 
@@ -57,7 +57,7 @@ public class SC_VN_Modify : SequencerCommandBase
         VN_CharBase charcomp = target.GetComponent<VN_CharBase>();
 
         charcomp.setAttire(prevAttireIndex);
-        charcomp.setExpression(prevExpressionName);
+        charcomp.setExpression(prevExpressionName, true);
     }
 
     override public void forward(SequencePlayer player)
@@ -83,14 +83,20 @@ public class SC_VN_Modify : SequencerCommandBase
             
             if (charcomp != null)
             {
-                string[] names = charcomp.getAttireNames();
+                string[] attires = charcomp.getAttireNames();
                 GUILayout.Label("attire:");
-                attireListIndex = EditorGUILayout.Popup(attireListIndex, names, GUILayout.Width(100));
+                attireListIndex = EditorGUILayout.Popup(attireListIndex, attires, GUILayout.Width(100));
     
-                names = charcomp.getExpressionNames();
+                string[] expressions = charcomp.getExpressionNames();
                 GUILayout.Label("expression:");
-                expressionListIndex = EditorGUILayout.Popup(expressionListIndex, names, GUILayout.Width(100));
-                expressionName = names [expressionListIndex];
+                expressionListIndex = EditorGUILayout.Popup(expressionListIndex, expressions, GUILayout.Width(100));
+                if (expressionListIndex < expressions.Length)
+                    expressionName = expressions [expressionListIndex];
+                else
+                {
+                    Debug.LogWarning("Error here");
+                    expressionName = expressions [0];
+                }
             }
         }
     }

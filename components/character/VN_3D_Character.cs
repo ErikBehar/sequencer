@@ -46,11 +46,14 @@ public class VN_3D_Character : VN_CharBase
         }        
     }
     
-    public override void setExpression(string name)
+    public override void setExpression(string name, bool isRewind)
     {
         if (animation [name] != null)
+        {
+            if (isRewind)
+                animation.Rewind(name);
             animation.CrossFade(name);
-        else
+        } else
             Debug.LogWarning("Couldnt set anim: " + name + " cause possibly not active ?");
     }
     
@@ -90,6 +93,8 @@ public class VN_3D_Character : VN_CharBase
         {
             if (state.enabled && state.speed > 0 && animation.isPlaying)
             {
+                if (state.clip == null)
+                    return "none";
                 return state.clip.name;
             }
             

@@ -23,6 +23,8 @@ public class SC_VN_Dialog : SequencerCommandBase
     public AudioClip audioClip;
     public float volume = 1.0f;
 
+    public float bubbleXOffset = 0;
+
     override public void initChild()
     {
     }
@@ -39,7 +41,7 @@ public class SC_VN_Dialog : SequencerCommandBase
         }
 
         GameObject target = sequencerData.targets [speakerTargetIndex].target;
-        myPlayer.dialogController.showDialog(text, target);
+        myPlayer.dialogController.showDialog(text, target, bubbleXOffset);
     
         myPlayer.inRewindMode = false;
         myPlayer.callBackFromCommand(true); 
@@ -71,7 +73,7 @@ public class SC_VN_Dialog : SequencerCommandBase
         speakerTargetIndex = EditorGUILayout.Popup(speakerTargetIndex, nicks, GUILayout.Width(100));
     
         GUILayout.Label("Text:"); 
-        text = EditorGUILayout.TextField(text);
+        text = EditorGUILayout.TextField(text, GUILayout.Width(300));
                 
         GUILayout.Label("Time:"); 
         time = EditorGUILayout.FloatField(time);
@@ -81,6 +83,9 @@ public class SC_VN_Dialog : SequencerCommandBase
             
         GUILayout.Label("Volume 0 - 1.0:"); 
         volume = EditorGUILayout.FloatField(volume);
+        
+        GUILayout.Label("Speech bubble X offset:"); 
+        bubbleXOffset = EditorGUILayout.FloatField(bubbleXOffset);
     }
     #endif
 }

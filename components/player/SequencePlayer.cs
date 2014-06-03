@@ -50,8 +50,6 @@ public class SequencePlayer : MonoBehaviour
     {
         inRewindMode = false;
 
-        sequencerData.sections [currSectionIndex].commandList [currCommandIndex].forward(this);
-
         if (blockForward)
         {
             blockForward = false;
@@ -63,8 +61,16 @@ public class SequencePlayer : MonoBehaviour
                 Debug.Log("END of Sequence! or reached end of Section with out a jump.");
             } else
             {
-                currCommandIndex += 1;
-                play();
+                sequencerData.sections [currSectionIndex].commandList [currCommandIndex].forward(this);
+
+                if (!blockForward)
+                {
+                    currCommandIndex += 1;
+                    play();
+                } else
+                {
+                    blockForward = false;
+                }
             }
         }
     }

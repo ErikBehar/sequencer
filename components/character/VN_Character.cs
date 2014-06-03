@@ -44,7 +44,7 @@ public class VN_Character : VN_CharBase
         }        
     }
     
-    public override void setExpression(string name)
+    public override void setExpression(string name, bool isRewind)
     {
         for (int i = 0; i < expressions.Length; i++)
         {

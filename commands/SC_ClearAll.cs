@@ -58,7 +58,16 @@ public class SC_ClearAll : SequencerCommandBase
             //characters (visible, pos, attire, expression)
             foreach (SequencerTargetModel model in myPlayer.sequencerData.targets)
             {
-                positions.Add(model.target.transform.localPosition);
+                if (model.target == null)
+                {
+                    positions.Add(Vector3.zero);
+                    visibilitys.Add(false);
+                    attires.Add(0);
+                    expressions.Add("none");
+                    continue;
+                }    
+
+                positions.Add(model.target.transform.position);
                 visibilitys.Add(model.target.activeInHierarchy);
                 VN_CharBase hasCharComp = model.target.GetComponent<VN_CharBase>(); 
 
@@ -90,18 +99,22 @@ public class SC_ClearAll : SequencerCommandBase
             SoundManager.Get().playMusic(musicClipName, musicClipVolume);
         
         //characters (visible, pos, attire, expression)
-        for (int i = 0; i < myPlayer.sequencerData.targets.Count; i++)
+        int count = myPlayer.sequencerData.targets.Count;
+        for (int i = 0; i < count; i++)
         {
+            if (myPlayer.sequencerData.targets [i].target == null)
+                continue;
+        
             SequencerTargetModel model = myPlayer.sequencerData.targets [i];
             
             VN_CharBase hasCharComp = model.target.GetComponent<VN_CharBase>(); 
-            model.target.transform.localPosition = positions [i];
+            model.target.transform.position = positions [i];
            
             if (hasCharComp != null)
             {
                 model.target.SetActive(visibilitys [i]);
                 hasCharComp.setAttire(attires [i]);
-                hasCharComp.setExpression(expressions [i]);
+                hasCharComp.setExpression(expressions [i], true);
             }
         } 
         

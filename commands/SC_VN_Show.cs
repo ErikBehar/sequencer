@@ -63,7 +63,17 @@ public class SC_VN_Show : SequencerCommandBase
 
             target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
 
-            tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onTweenComplete));
+            Vector3 finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+
+            if (time == 0)
+            {        
+                target.localPosition = finalPos;
+                if (waitForEndOfTween)
+                {
+                    myPlayer.callBackFromCommand();
+                }
+            } else
+                tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", finalPos).OnComplete(onTweenComplete));
         }
         
         if (!waitForEndOfTween)
@@ -80,15 +90,33 @@ public class SC_VN_Show : SequencerCommandBase
 
         target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
 
+        Vector3 finalPos;
         if (useFrom)            
-            tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoComplete));
+            finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
         else
-            tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoComplete));
+            finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+
+        if (time == 0)
+        {        
+            target.localPosition = finalPos;
+            if (waitForEndOfTween)
+            {
+                myPlayer.callBackFromCommand();
+            }
+        } else
+            tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", finalPos).OnComplete(onUndoComplete));
     }
 
     override public void forward(SequencePlayer player)
     {
-
+        if (waitForEndOfTween && tween != null && !tween.isComplete)
+        {
+            tween.Kill();
+            
+            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+            target.localPosition = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);            
+        }
     }
     
     override public void backward(SequencePlayer player)
@@ -96,9 +124,18 @@ public class SC_VN_Show : SequencerCommandBase
         if (tween != null && !tween.isComplete)
         {
             tween.Kill();
-        }
 
-        undo();
+            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Vector3 finalPos;
+            if (useFrom)
+            {
+                Transform to = sequencerData.targets [lastSelectedFrom].target.transform;          
+                finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            } else
+                finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            
+            target.localPosition = finalPos;    
+        }
     }
     
     public void onTweenComplete(TweenEvent evt)
