@@ -29,6 +29,18 @@ public class SC_VN_Dialog : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_VN_Dialog newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Dialog)) as SC_VN_Dialog;
+        newCmd.speakerTargetIndex = speakerTargetIndex;
+        newCmd.text = text;
+        newCmd.time = time;
+        newCmd.audioClip = audioClip;
+        newCmd.volume = volume;
+        newCmd.bubbleXOffset = bubbleXOffset;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

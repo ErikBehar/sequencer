@@ -14,12 +14,14 @@ public class SequencerCommandBase : ScriptableObject
     public virtual string commandType { get { return "base-abstract"; } }
 
     public int sectionIndex = -1;
-    private int listIndex = -1;
-    private int currIndex = -1;
-    private int targetIndex = -1;
-    protected SequencePlayer myPlayer;
+    public int listIndex = -1;
+    public int currIndex = -1;
+    public int targetIndex = -1;
 
     public SequencerData sequencerData;
+
+    //this is temporary 
+    public SequencePlayer myPlayer;
 
     public void init(int in_sectionIndex, SequencerData data)
     {
@@ -48,6 +50,21 @@ public class SequencerCommandBase : ScriptableObject
 
     public virtual void backward(SequencePlayer player)
     {
+    }
+
+    public virtual SequencerCommandBase clone()
+    {
+        return new SequencerCommandBase();
+    }
+
+    public SequencerCommandBase clone(SequencerCommandBase cmd)
+    {       
+        cmd.sectionIndex = sectionIndex;
+        cmd.listIndex = listIndex;
+        cmd.currIndex = currIndex;
+        cmd.targetIndex = targetIndex;
+        cmd.sequencerData = sequencerData;
+        return cmd;
     }
 
     #if UNITY_EDITOR

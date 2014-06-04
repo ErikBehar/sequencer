@@ -32,6 +32,12 @@ public class SC_ClearAll : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_ClearAll newCmd = ScriptableObject.CreateInstance(typeof(SC_ClearAll)) as SC_ClearAll;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

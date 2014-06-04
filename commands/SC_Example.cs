@@ -25,6 +25,13 @@ public class SC_Example : SequencerCommandBase
     override public void initChild()
     {
     }
+
+    //make a copy of this thats not a reference ( make sure you change the indexes after you clone, lest you run into duplicates)
+    override public SequencerCommandBase clone()
+    {       
+        SC_Example newCmd = ScriptableObject.CreateInstance(typeof(SC_Example)) as SC_Example;
+        return base.clone(newCmd);        
+    }
     
     //Execute runs when the player.play() method is called, basically when we've switched into this command
     override public void execute(SequencePlayer player)

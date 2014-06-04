@@ -27,6 +27,13 @@ public class SC_StopMusic : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_StopMusic newCmd = ScriptableObject.CreateInstance(typeof(SC_StopMusic)) as SC_StopMusic;
+        newCmd.fadeTime = fadeTime;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

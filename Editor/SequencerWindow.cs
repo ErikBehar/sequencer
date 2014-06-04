@@ -18,7 +18,7 @@ public class SequencerWindow : EditorWindow
     private static string lastSelectedArea = "targets"; //can be "targets" , "sections"
 
     private static int lastSelectedSection = -1;
-    private static string lastSelectedSectionName = "";
+    private static string renameBoxString = "";
     private static int lastSelectedCommand = 0;
     private GUIStyle guiBGAltColorA;
     private Texture2D littleTextureForBG_A;
@@ -145,10 +145,16 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         {
             if (GUILayout.Button("Define Targets"))
-                lastSelectedArea = "targets";   
+                lastSelectedArea = "targets";  
+         
             if (GUILayout.Button("Sections"))
-                lastSelectedArea = "sections";  
-
+            {
+                lastSelectedArea = "sections"; 
+                if (lastSelectedSection == -1 && sequencerData.sections != null && sequencerData.sections.Count > 0)
+                {
+                    lastSelectedSection = 0;
+                }
+            }
         }   
         EditorGUILayout.EndHorizontal();   
     }
@@ -206,6 +212,12 @@ public class SequencerWindow : EditorWindow
             GUILayout.Label("Sections");
             if (GUILayout.Button("New Section"))
                 doAddNewSection();
+            
+            if (GUILayout.Button("Duplicate Selected Section"))
+            {
+                if (sequencerData.sections != null && lastSelectedSection > -1)
+                    doDuplicateSection(sequencerData.sections [lastSelectedSection]);
+            }
 
 //            if (GUILayout.Button("Fix Commands to have reference to data object"))
 //                doFixCommands();
@@ -223,10 +235,10 @@ public class SequencerWindow : EditorWindow
                 lastSelectedSection = EditorGUILayout.Popup(lastSelectedSection, sequencerData.getSectionNames(), GUILayout.Width(100));
     
                 GUILayout.Label("Rename to this:");
-                lastSelectedSectionName = GUILayout.TextField(lastSelectedSectionName);
+                renameBoxString = GUILayout.TextField(renameBoxString);
     
                 if (GUILayout.Button("Rename this Section"))
-                    doRenameSection(sequencerData.getSectionNames() [lastSelectedSection], lastSelectedSectionName);    
+                    doRenameSection(sequencerData.sections [lastSelectedSection], renameBoxString);    
         
                 if (GUILayout.Button("Delete this Section"))
                     doDeleteSection(sequencerData.getSectionNames() [lastSelectedSection]); 
@@ -315,15 +327,18 @@ public class SequencerWindow : EditorWindow
     }
 
     //note this renames all with same name
-    void doRenameSection(string sectionName, string newName)
+    void doRenameSection(SequencerSectionModel sectionModel, string newName)
     {
-        for (int i = sequencerData.sections.Count-1; i > -1; i--)
+        foreach (SequencerSectionModel model in sequencerData.sections)
         {
-            if (sectionName == sequencerData.sections [i].name)
+            if (sectionModel != model && model.name == newName)
             {
-                sequencerData.sections [i].name = newName;
+                Debug.LogWarning("Could not rename to " + newName + " because another section is already named that way !");
+                return;
             }
         }
+
+        sectionModel.name = newName;
     }
 
     void doAddCommandToSection(int sectionIndex, int typeIndex)
@@ -373,6 +388,22 @@ public class SequencerWindow : EditorWindow
         model.name = "section_" + UnityEngine.Random.Range(0, int.MaxValue).ToString();
         model.commandList = new List<SequencerCommandBase>();
         sequencerData.sections.Add(model);
+        lastSelectedSection = sequencerData.sections.Count - 1;
+    }
+
+    void doDuplicateSection(SequencerSectionModel model)
+    {
+        SequencerSectionModel newModel = model.clone();
+        newModel.name += "_" + UnityEngine.Random.Range(0, int.MaxValue).ToString();
+        //TODO make sure this name is unique before continue
+
+        foreach (SequencerCommandBase cmd in newModel.commandList)
+        {
+            cmd.init(sequencerData.sections.Count, sequencerData);
+        }
+
+        sequencerData.sections.Add(newModel);
+        lastSelectedSection = sequencerData.sections.Count - 1;
     }
 
     void Update()

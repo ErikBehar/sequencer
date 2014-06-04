@@ -21,6 +21,12 @@ public class SC_MuteAllSfx : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_MuteAllSfx newCmd = ScriptableObject.CreateInstance(typeof(SC_MuteAllSfx)) as SC_MuteAllSfx;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

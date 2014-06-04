@@ -34,6 +34,16 @@ public class SC_VN_Hide : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_VN_Hide newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Hide)) as SC_VN_Hide;
+        newCmd.useTo = useTo;
+        newCmd.lastSelectedWho = lastSelectedWho;
+        newCmd.lastSelectedTo = lastSelectedTo;
+        newCmd.waitForEndOfTween = waitForEndOfTween;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

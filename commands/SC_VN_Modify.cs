@@ -22,11 +22,21 @@ public class SC_VN_Modify : SequencerCommandBase
     public int attireListIndex = 0;
     public int expressionListIndex = 0;
     public string expressionName;
-    public string prevExpressionName;
+    private string prevExpressionName;
     private int prevAttireIndex = 0;
    
     override public void initChild()
     {
+    }
+
+    override public SequencerCommandBase clone()
+    {       
+        SC_VN_Modify newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Modify)) as SC_VN_Modify;
+        newCmd.targetIndexList = targetIndexList;
+        newCmd.attireListIndex = attireListIndex;
+        newCmd.expressionListIndex = expressionListIndex;
+        newCmd.expressionName = expressionName;
+        return base.clone(newCmd);        
     }
 
     override public void execute(SequencePlayer player)

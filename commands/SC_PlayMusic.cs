@@ -28,6 +28,14 @@ public class SC_PlayMusic : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_PlayMusic newCmd = ScriptableObject.CreateInstance(typeof(SC_PlayMusic)) as SC_PlayMusic;
+        newCmd.audioClip = audioClip;
+        newCmd.volume = volume;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

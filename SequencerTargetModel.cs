@@ -14,6 +14,7 @@ public class SequencerTargetModel
         SequencerTargetModel newTarget = new SequencerTargetModel();
         newTarget.target = target;
         newTarget.nickname = nickname;
+        newTarget.type = type;
         return newTarget;
     }
 }

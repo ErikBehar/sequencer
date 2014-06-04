@@ -29,6 +29,16 @@ public class SC_VN_Choice : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_VN_Choice newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Choice)) as SC_VN_Choice;
+        newCmd.size = size;
+        newCmd.sectionIndexList = new List<int>(sectionIndexList.ToArray());
+        newCmd.optionTextList = new List<string>(optionTextList.ToArray());
+        newCmd.commandIndexList = new List<int>(commandIndexList.ToArray());
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

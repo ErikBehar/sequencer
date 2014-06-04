@@ -26,6 +26,13 @@ public class SC_Pause : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_Pause newCmd = ScriptableObject.CreateInstance(typeof(SC_Pause)) as SC_Pause;
+        newCmd.time = time;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

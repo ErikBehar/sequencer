@@ -38,6 +38,18 @@ public class SC_VN_Show : SequencerCommandBase
         
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_VN_Show newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Show)) as SC_VN_Show;
+        newCmd.useFrom = useFrom;
+        newCmd.lastSelectedWho = lastSelectedWho;
+        newCmd.lastSelectedTo = lastSelectedTo;
+        newCmd.lastSelectedFrom = lastSelectedFrom;
+        newCmd.time = time;
+        newCmd.waitForEndOfTween = waitForEndOfTween;
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;

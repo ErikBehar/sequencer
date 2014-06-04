@@ -13,10 +13,13 @@ public class SequencerSectionModel
     {
         SequencerSectionModel newSection = new SequencerSectionModel();
         newSection.name = name;
-
-        SequencerCommandBase[] temp = new SequencerCommandBase[ commandList.Count];
-        commandList.CopyTo(temp);
-        newSection.commandList = new List<SequencerCommandBase>(temp);
+        newSection.commandList = new List<SequencerCommandBase>();
+        
+        
+        foreach (SequencerCommandBase command in commandList)
+        {
+            newSection.commandList.Add(command.clone());
+        }        
 
         return newSection;
     }

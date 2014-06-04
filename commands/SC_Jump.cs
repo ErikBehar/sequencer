@@ -32,6 +32,16 @@ public class SC_Jump : SequencerCommandBase
     {
     }
 
+    override public SequencerCommandBase clone()
+    {       
+        SC_Jump newCmd = ScriptableObject.CreateInstance(typeof(SC_Jump)) as SC_Jump;
+        newCmd.targetSectionIndex = targetSectionIndex;
+        newCmd.commandIndex = commandIndex;
+        newCmd.commandIndexes = new string[commandIndexes.Length ];
+        Array.Copy(commandIndexes, newCmd.commandIndexes, commandIndexes.Length);
+        return base.clone(newCmd);        
+    }
+
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;
