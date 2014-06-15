@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using System;
 using System.Collections.Generic;
 
-public class NguiDialogBubble : MonoBehaviour
+public class NguiDialogBubble : DialogControllerBase
 {
     public GameObject speechBubbleLeft;
     public GameObject speechBubbleRight;
@@ -41,10 +41,10 @@ public class NguiDialogBubble : MonoBehaviour
         rightBubbleOriginalDifference = (rightBubbleEdge.transform.position - speechBubbleRight.transform.position).x;
     }
 
-    public void showDialog(string text, GameObject charspeaker, float xOffset)
+    override public void showDialog(string text, GameObject charspeaker, float xOffset)
     {
         shown = true;
-        text = chopTextIntoPieces(textLineSize, text);
+        text = chopTextIntoPieces(textLineSize, parseForCarriageReturns(text));
 
         if (charspeaker.transform.localPosition.x > 1)
         {            
@@ -67,10 +67,19 @@ public class NguiDialogBubble : MonoBehaviour
         }
     }
 
+    public string parseForCarriageReturns(string text)
+    {
+        return text.Replace("\\n", Environment.NewLine);
+    }
+
     public string chopTextIntoPieces(int size, string originalText)
     {
-        string[] temp = originalText.Split(new char[]{' '});
-
+        string[] temp = originalText.Split(new string[]
+        {
+            " ",
+            Environment.NewLine
+        }, StringSplitOptions.None);
+        
         int newSize = 0;
         string finalString = "";
         foreach (string piece in temp)
@@ -83,11 +92,10 @@ public class NguiDialogBubble : MonoBehaviour
             } else
                 finalString += " " + piece;
         }
-
         return finalString;
     }
 
-    public void hideDialog()
+    override public void hideDialog()
     {
         shown = false;
         speechBubbleRight.SetActive(false);

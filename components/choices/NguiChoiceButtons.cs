@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class NguiChoiceButtons : MonoBehaviour
+public class NguiChoiceButtons : ChoiceControllerBase
 {
     public GameObject exampleButton;
 
@@ -17,7 +17,7 @@ public class NguiChoiceButtons : MonoBehaviour
         exampleButton.SetActive(false);
     }
 
-    public void generateButtons(List<ChoiceModel> choices, SequencePlayer player)
+    override public void generateButtons(List<ChoiceModel> choices, SequencePlayer player)
     {
         currentPlayer = player;
 
@@ -54,7 +54,7 @@ public class NguiChoiceButtons : MonoBehaviour
         }
     }
 
-    public void cleanup()
+    override public void cleanup()
     {
         foreach (GameObject button in buttons)
         {

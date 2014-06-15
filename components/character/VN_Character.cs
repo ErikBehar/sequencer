@@ -30,6 +30,28 @@ public class VN_Character : VN_CharBase
         return names;
     }
 
+    public override string getCurrentAttireName()
+    {
+        for (int i = 0; i < attires.Length; i++)
+        {
+            if (attires [i].activeInHierarchy)
+                return attires [i].name;
+        }
+        
+        return "";
+    }
+    
+    public override void setAttire(string name)
+    {
+        for (int i = 0; i < attires.Length; i++)
+        {
+            if (attires [i].name == name)
+                attires [i].SetActive(true);
+            else
+                attires [i].SetActive(false);
+        } 
+    } 
+
     public override void setAttire(int index)
     {
         for (int i = 0; i < attires.Length; i++)

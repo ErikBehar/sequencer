@@ -17,7 +17,7 @@ public class SC_VN_Dialog : SequencerCommandBase
     public override string commandId{ get { return "dialog"; } }
     public override string commandType{ get { return "base"; } }
 
-    public int speakerTargetIndex;
+    public string speakerTargetName;
     public string text;
     public float time = 0f;
     public AudioClip audioClip;
@@ -32,7 +32,7 @@ public class SC_VN_Dialog : SequencerCommandBase
     override public SequencerCommandBase clone()
     {       
         SC_VN_Dialog newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Dialog)) as SC_VN_Dialog;
-        newCmd.speakerTargetIndex = speakerTargetIndex;
+        newCmd.speakerTargetName = speakerTargetName;
         newCmd.text = text;
         newCmd.time = time;
         newCmd.audioClip = audioClip;
@@ -52,8 +52,8 @@ public class SC_VN_Dialog : SequencerCommandBase
             SoundManager.Get().playSfx(audioClip.name, volume);
         }
 
-        GameObject target = sequencerData.targets [speakerTargetIndex].target;
-        myPlayer.dialogController.showDialog(text, target, bubbleXOffset);
+        GameObject target = sequencerData.targets [sequencerData.getIndexOfTarget(speakerTargetName)].target;
+        myPlayer.dialogController.showDialog(parseTextForVarsAndBB(text), target, bubbleXOffset);
     
         myPlayer.inRewindMode = false;
         myPlayer.callBackFromCommand(true); 
@@ -80,9 +80,10 @@ public class SC_VN_Dialog : SequencerCommandBase
     #if UNITY_EDITOR 
     override public void drawCustomUi()
     { 
-        string[] nicks = sequencerData.getTargetNickNames();
+        string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
+
         GUILayout.Label("Speech Target:");
-        speakerTargetIndex = EditorGUILayout.Popup(speakerTargetIndex, nicks, GUILayout.Width(100));
+        speakerTargetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, speakerTargetName), nickChars, GUILayout.Width(100))];
     
         GUILayout.Label("Text:"); 
         text = EditorGUILayout.TextField(text, GUILayout.Width(300));
@@ -100,4 +101,45 @@ public class SC_VN_Dialog : SequencerCommandBase
         bubbleXOffset = EditorGUILayout.FloatField(bubbleXOffset);
     }
     #endif
+
+    private string parseTextForVarsAndBB(string text)
+    {
+        //variables
+        while (text.IndexOf( "[" ) > -1)
+        {
+            int indexOpen = text.IndexOf("[");
+            if (indexOpen > -1)
+            {
+                int indexClose = text.IndexOf("]");
+                string substring = text.Substring(indexOpen + 1, indexClose - (indexOpen + 1));
+                if (myPlayer.runningTimeVariablesDictionary.ContainsKey(substring))
+                {
+                    text = text.Replace("[" + substring + "]", myPlayer.runningTimeVariablesDictionary [substring]);
+                } else
+                {
+                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - indexClose);
+                }
+            }
+        }
+
+        //known BB codes
+        text = text.Replace("{b}", "[b]");
+        text = text.Replace("{/b}", "[/b]");
+        text = text.Replace("{i}", "[i]");
+        text = text.Replace("{/i}", "[/i]");
+        text = text.Replace("{u}", "[u]");
+        text = text.Replace("{/u}", "[/u]");
+        text = text.Replace("{s}", "[s]");
+        text = text.Replace("{/s}", "[/s]");
+        text = text.Replace("{sup}", "[sup]");
+        text = text.Replace("{/sup}", "[/sup]");
+        text = text.Replace("{sub}", "[sub]");
+        text = text.Replace("{/sub}", "[/sub]");
+               
+        //fix issue with ngui typewriter failing if bb is last thing in string ?
+        if (text [text.Length - 1] == ']')
+            text += " ";
+
+        return text;
+    }
 }

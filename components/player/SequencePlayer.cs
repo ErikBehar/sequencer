@@ -13,12 +13,22 @@ public class SequencePlayer : MonoBehaviour
     [HideInInspector]
     public bool
         inRewindMode = false;
-    public NguiDialogBubble dialogController;
-    public NguiChoiceButtons choiceController;
+
+    public DialogControllerBase dialogController;
+    public ChoiceControllerBase choiceController;
+    public InputControllerBase inputController;
     public bool blockForward = false;
 
+    public Dictionary<string, string> runningTimeVariablesDictionary;
+
+    public bool lastEvalResultBool = false;
+    public int lastEvalResultInt = -1;
+    public float lastEvalResultFloat = 1.0f;
+    
     void Start()
     {
+        runningTimeVariablesDictionary = sequencerData.getVariablesAsDictionary();
+
         for (int i = 0; i < sequencerData.sections.Count; i++)
         {
             if (sequencerData.sections [i].name == startingScene)
@@ -45,7 +55,7 @@ public class SequencePlayer : MonoBehaviour
         sequencerData.sections [currSectionIndex].commandList [currCommandIndex].execute(this);
     }
     
-    //sets one command forward and executes
+    //sets one command forward and executes (only if the command isnt blocking you )
     public void forward()
     {
         inRewindMode = false;
@@ -72,6 +82,17 @@ public class SequencePlayer : MonoBehaviour
                     blockForward = false;
                 }
             }
+        }
+    }
+
+    public void forceForward()
+    {
+        if (currCommandIndex + 1 == sequencerData.sections [currSectionIndex].commandList.Count)
+        {
+            Debug.Log("END of Sequence! or reached end of Section with out a jump.");
+        } else
+        {
+            jumpToScene(sequencerData.sections [currSectionIndex].name, currCommandIndex + 1);
         }
     }
 
@@ -152,4 +173,19 @@ public class SequencePlayer : MonoBehaviour
         else
             backward();      
     }
+
+    public void setEvalResultBool(bool result)
+    {
+        lastEvalResultBool = result;
+    }
+
+    public void setEvalResultInt(int result)
+    {
+        lastEvalResultInt = result;
+    }
+    
+    public void setEvalResultFloat(float result)
+    {
+        lastEvalResultFloat = result;
+    }   
 }

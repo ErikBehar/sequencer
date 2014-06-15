@@ -23,9 +23,9 @@ public class SC_VN_Show : SequencerCommandBase
     public override string commandType{ get { return "base"; } }
 
     public bool useFrom = false;
-    public int lastSelectedWho = 0;
-    public int lastSelectedFrom = -1;
-    public int lastSelectedTo = 0;
+    public string lastSelectedWho = "";
+    public string lastSelectedFrom = "";
+    public string lastSelectedTo = "";
     public float time = 0;
     public bool waitForEndOfTween = false;
     private bool wasActiveAtStart = false;
@@ -59,16 +59,16 @@ public class SC_VN_Show : SequencerCommandBase
             undo();
         } else
         {
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
             Transform from = null;
             if (useFrom)
-                from = sequencerData.targets [lastSelectedFrom].target.transform;
+                from = sequencerData.getTargetModel(lastSelectedFrom).target.transform;
             else
             {
                 from = target.transform;
                 previousPosition = from.localPosition;
             }
-            Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+            Transform to = sequencerData.getTargetModel(lastSelectedTo).target.transform;
          
             wasActiveAtStart = target.gameObject.activeInHierarchy;
             target.gameObject.SetActive(true);  
@@ -94,11 +94,11 @@ public class SC_VN_Show : SequencerCommandBase
     
     override public void undo()
     {
-        Transform target = sequencerData.targets [lastSelectedWho].target.transform;
-        Transform from = sequencerData.targets [lastSelectedTo].target.transform;
+        Transform target = sequencerData.getTargetModel(lastSelectedWho).target.transform;
+        Transform from = sequencerData.getTargetModel(lastSelectedTo).target.transform;
         Transform to = null;
         if (useFrom)
-            to = sequencerData.targets [lastSelectedFrom].target.transform;
+            to = sequencerData.getTargetModel(lastSelectedFrom).target.transform;
 
         target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
 
@@ -125,8 +125,8 @@ public class SC_VN_Show : SequencerCommandBase
         {
             tween.Kill();
             
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
-            Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+            Transform target = sequencerData.getTargetModel(lastSelectedWho).target.transform;
+            Transform to = sequencerData.getTargetModel(lastSelectedTo).target.transform;
             target.localPosition = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);            
         }
     }
@@ -137,11 +137,11 @@ public class SC_VN_Show : SequencerCommandBase
         {
             tween.Kill();
 
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
             Vector3 finalPos;
             if (useFrom)
             {
-                Transform to = sequencerData.targets [lastSelectedFrom].target.transform;          
+                Transform to = sequencerData.getTargetModel(lastSelectedFrom).target.transform;          
                 finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
             } else
                 finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
@@ -160,7 +160,7 @@ public class SC_VN_Show : SequencerCommandBase
 
     public void onUndoComplete(TweenEvent evt)
     {
-        Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+        Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
         target.gameObject.SetActive(wasActiveAtStart);
         if (waitForEndOfTween)
         {
@@ -171,24 +171,26 @@ public class SC_VN_Show : SequencerCommandBase
     #if UNITY_EDITOR
     override public void drawCustomUi()
     {
-        string[] nicks = sequencerData.getTargetNickNames();
-        
+        string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
+        string[] nickPos = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.positional);
+
         GUILayout.Label("show who?:");
-        lastSelectedWho = EditorGUILayout.Popup(lastSelectedWho, nicks, GUILayout.Width(100));
+        
+        lastSelectedWho = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, lastSelectedWho), nickChars, GUILayout.Width(100))];
         
         useFrom = GUILayout.Toggle(useFrom, "use from?");
 
         if (useFrom)
         {
             GUILayout.Label("start from:"); 
-            lastSelectedFrom = EditorGUILayout.Popup(lastSelectedFrom, nicks, GUILayout.Width(100));
+            lastSelectedFrom = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedFrom), nickPos, GUILayout.Width(100))];
         } else
         {
-            lastSelectedFrom = -1;
+            lastSelectedFrom = "";
         }
 
         GUILayout.Label("going to:"); 
-        lastSelectedTo = EditorGUILayout.Popup(lastSelectedTo, nicks, GUILayout.Width(100));
+        lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
 
         GUILayout.Label("transition Time:");
         time = EditorGUILayout.FloatField(time);
@@ -196,5 +198,5 @@ public class SC_VN_Show : SequencerCommandBase
         GUILayout.Label("Wait for transition to end before continue?:");
         waitForEndOfTween = EditorGUILayout.Toggle(waitForEndOfTween);
     }
-#endif
+    #endif
 }

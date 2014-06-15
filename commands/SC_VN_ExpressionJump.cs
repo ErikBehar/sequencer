@@ -8,23 +8,23 @@ using System.Collections.Generic;
 using System;
 
 /// <summary>
-/// 2D : Visual Novel: Choice : Sequencer Command
-/// Shows several options each option jumps you to another section
+/// 2D : Visual Novel: Expression Jump : Sequencer Command
+/// Jumps based on evaluation of a boolean expression
+/// first expression to evaluate to true is the winnes (order matters)
 /// </summary>
 using System.Linq;
 
 [Serializable]
-public class SC_VN_Choice : SequencerCommandBase
+public class SC_VN_ExpressionJump : SequencerCommandBase
 {
-    public override string commandId{ get { return "choice"; } }
+    public override string commandId{ get { return "expressionJump"; } }
 
     public override string commandType{ get { return "base"; } }
 
     public int size = 0;
+    public List<string> expressionList;
     public List<string> sectionNameList;
-    public List<string> optionTextList;
     public List<int> commandIndexList;
-   
     [HideInInspector]
     public List<SequencerCommandBase>
         targetCommandList;
@@ -35,10 +35,10 @@ public class SC_VN_Choice : SequencerCommandBase
 
     override public SequencerCommandBase clone()
     {       
-        SC_VN_Choice newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Choice)) as SC_VN_Choice;
+        SC_VN_ExpressionJump newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_ExpressionJump)) as SC_VN_ExpressionJump;
         newCmd.size = size;
         newCmd.sectionNameList = new List<string>(sectionNameList.ToArray());
-        newCmd.optionTextList = new List<string>(optionTextList.ToArray());
+        newCmd.expressionList = new List<string>(expressionList.ToArray());
         newCmd.commandIndexList = new List<int>(commandIndexList.ToArray());
         newCmd.targetCommandList = new List<SequencerCommandBase>(targetCommandList.ToArray());
         return base.clone(newCmd);        
@@ -47,40 +47,44 @@ public class SC_VN_Choice : SequencerCommandBase
     override public void execute(SequencePlayer player)
     {
         myPlayer = player;
-        showChoices();
-        myPlayer.inRewindMode = false;
+        if (player.inRewindMode)
+            undo();
+        else
+        {
+            //evaluate expressions and jump to winning one
+            if (expressionList.Count == 0)
+            {
+                Debug.LogWarning("Expression Jump with zero expressions, will continue to next command!");
+                myPlayer.callBackFromCommand();
+            } else
+            {
+                int foundIndex = -1;
+                for (int i = 0; i < expressionList.Count; i++)
+                {
+                    myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalBool", expressionList [i]);
+                    if (myPlayer.lastEvalResultBool)
+                    {
+                        foundIndex = i;
+                        break;
+                    }
+                }
+                
+                if (foundIndex > -1)
+                {
+                    myPlayer.jumpToScene(sectionNameList [foundIndex], commandIndexList [foundIndex]);
+                } else
+                {
+                    Debug.LogWarning("Expression Jump none of the expressions evaluated to true, will continue to next command!");
+                    myPlayer.callBackFromCommand();
+                }
+            }
+        }
     }
 
-    private void showChoices()
-    {
-        List<ChoiceModel> choices = new List<ChoiceModel>();
-        for (int i = 0; i < sectionNameList.Count; i++)
-        {
-            ChoiceModel model = new ChoiceModel();
-            model.text = optionTextList [i];
-            model.sceneNameToJump = sectionNameList [i];
-            model.sceneCommandIndexToJump = commandIndexList [i];
-            choices.Add(model);
-        }
-        
-        myPlayer.choiceController.generateButtons(choices, myPlayer);
-    }
-    
     override public void undo()
     {
-        myPlayer.choiceController.cleanup();
-    }
-
-    override public void forward(SequencePlayer player)
-    {
-        //nothing, it blocks
-        myPlayer.blockForward = true;
-    }
-    
-    override public void backward(SequencePlayer player)
-    {
-        undo();
-    }
+        myPlayer.callBackFromCommand(); 
+    } 
    
     #if UNITY_EDITOR 
     override public void drawCustomUi()
@@ -100,8 +104,8 @@ public class SC_VN_Choice : SequencerCommandBase
                 {
                     EditorGUILayout.BeginHorizontal();
                     {
-                        GUILayout.Label("Option Text:");
-                        optionTextList [i] = EditorGUILayout.TextField(optionTextList [i]);
+                        GUILayout.Label("Expression:");
+                        expressionList [i] = EditorGUILayout.TextField(expressionList [i]);
 
                         GUILayout.Label("Jump to Section:");
                         sectionNameList [i] = nicks [EditorGUILayout.Popup(sequencerData.getIndexOfSection(sectionNameList [i]), nicks, GUILayout.Width(100))];
@@ -131,8 +135,8 @@ public class SC_VN_Choice : SequencerCommandBase
         if (sectionNameList == null)
             sectionNameList = new List<string>(size); 
 
-        if (optionTextList == null)
-            optionTextList = new List<string>(size);
+        if (expressionList == null)
+            expressionList = new List<string>(size);
 
         if (commandIndexList == null)
             commandIndexList = new List<int>(size);
@@ -155,12 +159,12 @@ public class SC_VN_Choice : SequencerCommandBase
             }
         }
         
-        if (optionTextList.Count < size)
-            optionTextList.AddRange(Enumerable.Repeat("option", size - optionTextList.Count).ToList());
+        if (expressionList.Count < size)
+            expressionList.AddRange(Enumerable.Repeat("1 > 2", size - expressionList.Count).ToList());
 
         commandIndexList = commandIndexList.GetRange(0, size);
         sectionNameList = sectionNameList.GetRange(0, size);
-        optionTextList = optionTextList.GetRange(0, size);
+        expressionList = expressionList.GetRange(0, size);
         targetCommandList = targetCommandList.GetRange(0, size);
     }
 

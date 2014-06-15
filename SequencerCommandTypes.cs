@@ -18,7 +18,10 @@ public class SequencerCommandTypes
         typeof(SC_VN_Hide),
         typeof(SC_VN_Modify),
         typeof(SC_VN_Show),
-        typeof(SC_ClearAll)
+        typeof(SC_ClearAll),
+        typeof(SC_SetVariable),
+        typeof(SC_VN_ExpressionJump),
+        typeof(SC_InputVariable),
     }; 
     
     static public string[] getAsStringArray()

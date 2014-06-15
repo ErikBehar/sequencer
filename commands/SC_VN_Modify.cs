@@ -18,12 +18,11 @@ public class SC_VN_Modify : SequencerCommandBase
     public override string commandId{ get { return "modify"; } }
     public override string commandType{ get { return "base"; } }
 
-    public int targetIndexList = 0;
-    public int attireListIndex = 0;
-    public int expressionListIndex = 0;
-    public string expressionName;
+    public string targetName = "";
+    public string attireName = "";
+    public string expressionName = "";
     private string prevExpressionName;
-    private int prevAttireIndex = 0;
+    private string prevAttireName = "";
    
     override public void initChild()
     {
@@ -32,9 +31,8 @@ public class SC_VN_Modify : SequencerCommandBase
     override public SequencerCommandBase clone()
     {       
         SC_VN_Modify newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Modify)) as SC_VN_Modify;
-        newCmd.targetIndexList = targetIndexList;
-        newCmd.attireListIndex = attireListIndex;
-        newCmd.expressionListIndex = expressionListIndex;
+        newCmd.targetName = targetName;
+        newCmd.attireName = attireName;
         newCmd.expressionName = expressionName;
         return base.clone(newCmd);        
     }
@@ -48,13 +46,15 @@ public class SC_VN_Modify : SequencerCommandBase
             undo();
         } else
         {
-            GameObject target = sequencerData.targets [targetIndexList].target;
+            GameObject target = sequencerData.getTargetModel(targetName).target;
             VN_CharBase charcomp = target.GetComponent<VN_CharBase>();
 
-            prevAttireIndex = charcomp.getCurrentAttire();
-            prevExpressionName = charcomp.getCurrentExpressionName();
+            if (charcomp.getAttireNames().Length > 0)
+                prevAttireName = charcomp.getCurrentAttireName();
+            if (charcomp.getExpressionNames().Length > 0)
+                prevExpressionName = charcomp.getCurrentExpressionName();
 
-            charcomp.setAttire(attireListIndex);
+            charcomp.setAttire(attireName);
             charcomp.setExpression(expressionName, false);            
         }
 
@@ -63,10 +63,10 @@ public class SC_VN_Modify : SequencerCommandBase
     
     override public void undo()
     {
-        GameObject target = sequencerData.targets [targetIndexList].target;
+        GameObject target = sequencerData.getTargetModel(targetName).target;
         VN_CharBase charcomp = target.GetComponent<VN_CharBase>();
 
-        charcomp.setAttire(prevAttireIndex);
+        charcomp.setAttire(prevAttireName);
         charcomp.setExpression(prevExpressionName, true);
     }
 
@@ -82,31 +82,27 @@ public class SC_VN_Modify : SequencerCommandBase
 #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
-        string[] nicks = sequencerData.getTargetNickNames();
+        string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
         
         GUILayout.Label("modify who?:");
-        targetIndexList = EditorGUILayout.Popup(targetIndexList, nicks, GUILayout.Width(100));
+        targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
 
-        if (sequencerData.targets [targetIndexList] != null)
+        SequencerTargetModel model = sequencerData.getTargetModel(targetName);
+        if (model != null)
         {
-            VN_CharBase charcomp = sequencerData.targets [targetIndexList].target.GetComponent<VN_CharBase>();
+            VN_CharBase charcomp = model.target.GetComponent<VN_CharBase>();
             
             if (charcomp != null)
             {
                 string[] attires = charcomp.getAttireNames();
                 GUILayout.Label("attire:");
-                attireListIndex = EditorGUILayout.Popup(attireListIndex, attires, GUILayout.Width(100));
+                if (attires.Length > 0)
+                    attireName = attires [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(attires, attireName), attires, GUILayout.Width(100))];
     
                 string[] expressions = charcomp.getExpressionNames();
                 GUILayout.Label("expression:");
-                expressionListIndex = EditorGUILayout.Popup(expressionListIndex, expressions, GUILayout.Width(100));
-                if (expressionListIndex < expressions.Length)
-                    expressionName = expressions [expressionListIndex];
-                else
-                {
-                    Debug.LogWarning("Error here");
-                    expressionName = expressions [0];
-                }
+                if (expressions.Length > 0)
+                    expressionName = expressions [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(expressions, expressionName), expressions, GUILayout.Width(100))];
             }
         }
     }

@@ -23,4 +23,13 @@ public class SequencerSectionModel
 
         return newSection;
     }
+    
+    public void rename(string newName)
+    {
+        name = newName;
+        foreach (SequencerCommandBase command in commandList)
+        {
+            command.sectionName = newName;
+        }   
+    }
 }

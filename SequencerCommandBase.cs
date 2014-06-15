@@ -13,7 +13,7 @@ public class SequencerCommandBase : ScriptableObject
     public virtual string commandId { get { return "base"; } }
     public virtual string commandType { get { return "base-abstract"; } }
 
-    public int sectionIndex = -1;
+    public string sectionName = "";
     public int listIndex = -1;
     public int currIndex = -1;
     public int targetIndex = -1;
@@ -23,9 +23,9 @@ public class SequencerCommandBase : ScriptableObject
     //this is temporary 
     public SequencePlayer myPlayer;
 
-    public void init(int in_sectionIndex, SequencerData data)
+    public void init(string in_sectionName, SequencerData data)
     {
-        sectionIndex = in_sectionIndex;
+        sectionName = in_sectionName;
         sequencerData = data;
         name = this.GetType().Name;
 
@@ -59,7 +59,7 @@ public class SequencerCommandBase : ScriptableObject
 
     public SequencerCommandBase clone(SequencerCommandBase cmd)
     {       
-        cmd.sectionIndex = sectionIndex;
+        cmd.sectionName = sectionName;
         cmd.listIndex = listIndex;
         cmd.currIndex = currIndex;
         cmd.targetIndex = targetIndex;
@@ -116,9 +116,11 @@ public class SequencerCommandBase : ScriptableObject
     {
         if (newPos > -1)
         {
-            newPos = Mathf.Clamp(newPos, 0, sequencerData.sections [sectionIndex].commandList.Count - 1);
-            sequencerData.sections [sectionIndex].commandList.Remove(this);
-            sequencerData.sections [sectionIndex].commandList.Insert(newPos, this);
+            SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
+
+            newPos = Mathf.Clamp(newPos, 0, sectionModel.commandList.Count - 1);
+            sectionModel.commandList.Remove(this);
+            sectionModel.commandList.Insert(newPos, this);
         
             updateAllIndex();
         }
@@ -126,13 +128,15 @@ public class SequencerCommandBase : ScriptableObject
 
     public void doReorder(int direction)
     {
+        SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
+
         int oldIndex = findIndexOf(this);
-        int newIndex = Mathf.Clamp(oldIndex + direction, 0, sequencerData.sections [sectionIndex].commandList.Count - 1);
+        int newIndex = Mathf.Clamp(oldIndex + direction, 0, sectionModel.commandList.Count - 1);
         
         if (newIndex != oldIndex)
         {
-            sequencerData.sections [sectionIndex].commandList.Remove(this);
-            sequencerData.sections [sectionIndex].commandList.Insert(newIndex, this);
+            sectionModel.commandList.Remove(this);
+            sectionModel.commandList.Insert(newIndex, this);
         
             updateAllIndex();
         }
@@ -140,11 +144,13 @@ public class SequencerCommandBase : ScriptableObject
 
     public void deleteThisCommand()
     {
-        foreach (SequencerCommandBase command in sequencerData.sections [sectionIndex].commandList)
+        SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
+
+        foreach (SequencerCommandBase command in sectionModel.commandList)
         {
             if (command.GetInstanceID() == this.GetInstanceID())
             {
-                sequencerData.sections [sectionIndex].commandList.Remove(command);
+                sectionModel.commandList.Remove(command);
                 DestroyImmediate(command);
 
                 updateAllIndex();
@@ -155,9 +161,11 @@ public class SequencerCommandBase : ScriptableObject
 
     public int findIndexOf(SequencerCommandBase command)
     {
-        for (int i = 0; i < sequencerData.sections [sectionIndex].commandList.Count; i++)
+        SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
+
+        for (int i = 0; i < sectionModel.commandList.Count; i++)
         {
-            if (sequencerData.sections [sectionIndex].commandList [i].GetInstanceID() == command.GetInstanceID())
+            if (sectionModel.commandList [i].GetInstanceID() == command.GetInstanceID())
             {
                 return i;
             }
@@ -167,10 +175,17 @@ public class SequencerCommandBase : ScriptableObject
 
     public void updateAllIndex()
     {
-        for (int i = 0; i < sequencerData.sections [sectionIndex].commandList.Count; i++)
+        SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
+
+        for (int i = 0; i < sectionModel.commandList.Count; i++)
         {
-            sequencerData.sections [sectionIndex].commandList [i].listIndex = i;
-            sequencerData.sections [sectionIndex].commandList [i].currIndex = i;
+            sectionModel.commandList [i].listIndex = i;
+            sectionModel.commandList [i].currIndex = i;
+            sectionModel.commandList [i].indexWasUpdated();
         } 
+    }
+
+    public virtual void indexWasUpdated()
+    {
     }
 }

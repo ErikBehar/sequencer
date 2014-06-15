@@ -22,8 +22,8 @@ public class SC_VN_Hide : SequencerCommandBase
     public override string commandType{ get { return "base"; } }
 
     public bool useTo = false;
-    public int lastSelectedWho = 0;
-    public int lastSelectedTo = -1;
+    public string lastSelectedWho = "";
+    public string lastSelectedTo = "";
     public float time = 0;
     public bool waitForEndOfTween = false;
     private Vector3 previousPosition;
@@ -40,6 +40,7 @@ public class SC_VN_Hide : SequencerCommandBase
         newCmd.useTo = useTo;
         newCmd.lastSelectedWho = lastSelectedWho;
         newCmd.lastSelectedTo = lastSelectedTo;
+        newCmd.time = time;
         newCmd.waitForEndOfTween = waitForEndOfTween;
         return base.clone(newCmd);        
     }
@@ -58,12 +59,12 @@ public class SC_VN_Hide : SequencerCommandBase
                 tween.Kill();
             }
 
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
             previousPosition = target.transform.localPosition;
 
             if (useTo)
             {
-                Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+                Transform to = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedTo)].target.transform;
                 tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onExecuteCompleteEvt));
             } else
             {
@@ -82,13 +83,13 @@ public class SC_VN_Hide : SequencerCommandBase
             tween.Kill();
         }
         
-        sequencerData.targets [lastSelectedWho].target.SetActive(true);
-        Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+        sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.SetActive(true);
+        Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
 
         if (useTo)
         {
             Transform from = null;
-            from = sequencerData.targets [lastSelectedTo].target.transform;
+            from = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedTo)].target.transform;
             target.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
             tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoCompleteEvt));
         } else
@@ -104,11 +105,11 @@ public class SC_VN_Hide : SequencerCommandBase
         {
             tween.Kill();
 
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
             
             if (useTo)
             {
-                Transform to = sequencerData.targets [lastSelectedTo].target.transform;
+                Transform to = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedTo)].target.transform;
                 target.localPosition = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
             }
             
@@ -122,7 +123,7 @@ public class SC_VN_Hide : SequencerCommandBase
         {
             tween.Kill();
 
-            Transform target = sequencerData.targets [lastSelectedWho].target.transform;
+            Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
             target.localPosition = previousPosition;
             target.gameObject.SetActive(true);  
         }
@@ -135,7 +136,7 @@ public class SC_VN_Hide : SequencerCommandBase
     
     public void onExecuteComplete()
     {
-        sequencerData.targets [lastSelectedWho].target.SetActive(false);  
+        sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.SetActive(false);  
         if (waitForEndOfTween)
         {
             myPlayer.callBackFromCommand();
@@ -158,20 +159,21 @@ public class SC_VN_Hide : SequencerCommandBase
     #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
-        string[] nicks = sequencerData.getTargetNickNames();
+        string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
+        string[] nickPos = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.positional);
         
         GUILayout.Label("hide who?:");
-        lastSelectedWho = EditorGUILayout.Popup(lastSelectedWho, nicks, GUILayout.Width(100));
+        lastSelectedWho = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, lastSelectedWho), nickChars, GUILayout.Width(100))];
         
         useTo = GUILayout.Toggle(useTo, "use to?");
 
         if (useTo)
         {
             GUILayout.Label("going to:"); 
-            lastSelectedTo = EditorGUILayout.Popup(lastSelectedTo, nicks, GUILayout.Width(100));
+            lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
         } else
         {
-            lastSelectedTo = -1;
+            lastSelectedTo = "";
         }
 
         GUILayout.Label("transition Time:");

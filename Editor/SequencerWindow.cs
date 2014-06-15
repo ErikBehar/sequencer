@@ -15,7 +15,7 @@ public class SequencerWindow : EditorWindow
     private GameObject dataHolderValGoLastVal = null;
     private static GameObject dataHolderGO = null;
     public static SequencerData sequencerData;
-    private static string lastSelectedArea = "targets"; //can be "targets" , "sections"
+    private static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables"
 
     private static int lastSelectedSection = -1;
     private static string renameBoxString = "";
@@ -25,6 +25,15 @@ public class SequencerWindow : EditorWindow
     private GUIStyle guiBGAltColorB;
     private Texture2D littleTextureForBG_B;
     private static int insertIndex = 0;
+
+    private TextAsset renpyTextAsset;
+
+    public static bool paging = true;
+    private int pagingSize = 100;
+    private int page = 0;
+
+    private string tempVarName = "variableX";
+    private string tempVarValue = "42";
 
    #region Window Stuff
     void OnDisable()
@@ -101,6 +110,10 @@ public class SequencerWindow : EditorWindow
                     drawDefineTargets();
                 else if (lastSelectedArea == "sections")
                     drawSections();
+                else if (lastSelectedArea == "import")
+                    drawImport();
+                else if (lastSelectedArea == "variables")
+                    drawVariables();
             }
         }
         EditorGUILayout.EndVertical();
@@ -155,6 +168,16 @@ public class SequencerWindow : EditorWindow
                     lastSelectedSection = 0;
                 }
             }
+
+            if (GUILayout.Button("Variables"))
+            {
+                lastSelectedArea = "variables";
+            }
+
+            if (GUILayout.Button("Import"))
+            {   
+                lastSelectedArea = "import";
+            }
         }   
         EditorGUILayout.EndHorizontal();   
     }
@@ -189,6 +212,8 @@ public class SequencerWindow : EditorWindow
                         else
                             EditorGUILayout.BeginHorizontal();
                         {
+                            GUILayout.Label("type:");
+                            targets [i].type = SequencerTargetTypes.targetTypes [EditorGUILayout.Popup(Array.IndexOf(SequencerTargetTypes.targetTypes, targets [i].type), SequencerTargetTypes.targetTypes)]; 
                             GUILayout.Label("target:");
                             targets [i].target = EditorGUILayout.ObjectField(targets [i].target, typeof(GameObject), true) as GameObject;
                             GUILayout.Label("Nickname:");
@@ -210,6 +235,9 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.BeginHorizontal();
         {
             GUILayout.Label("Sections");
+
+            paging = GUILayout.Toggle(paging, "Use Paging:");
+
             if (GUILayout.Button("New Section"))
                 doAddNewSection();
             
@@ -219,8 +247,8 @@ public class SequencerWindow : EditorWindow
                     doDuplicateSection(sequencerData.sections [lastSelectedSection]);
             }
 
-//            if (GUILayout.Button("Fix Commands to have reference to data object"))
-//                doFixCommands();
+            if (GUILayout.Button("Fix Commands"))
+                doFixCommands();
         }   
         EditorGUILayout.EndHorizontal();  
 
@@ -257,7 +285,6 @@ public class SequencerWindow : EditorWindow
             insertIndex = EditorGUILayout.IntField(insertIndex);
             if (GUILayout.Button("Add Command At"))
                 doAddCommandToSectionAt(lastSelectedSection, lastSelectedCommand, insertIndex);
-
         }  
         EditorGUILayout.EndHorizontal(); 
 
@@ -267,13 +294,34 @@ public class SequencerWindow : EditorWindow
         if (lastSelectedSection > -1 && lastSelectedSection < sequencerData.sections.Count && sequencerData.sections [lastSelectedSection] != null && sequencerData.sections [lastSelectedSection].commandList != null)
         {      
             scrollPosSections = EditorGUILayout.BeginScrollView(scrollPosSections);
-            {   
+            {                       
+                int pageStartIndex = 0;
+                int pageEndIndex;
+                int totalPages = 1;
+
                 EditorGUILayout.BeginVertical();
                 {
                     SequencerCommandBase[] tempCommands = new SequencerCommandBase[sequencerData.sections [lastSelectedSection].commandList.Count]; 
                     sequencerData.sections [lastSelectedSection].commandList.CopyTo(tempCommands);
 
-                    for (int i = 0; i < tempCommands.Length; i++)
+                    pageEndIndex = tempCommands.Length;
+
+                    if (paging)
+                    {
+                        if (tempCommands.Length > pagingSize)
+                        {
+                            totalPages = Mathf.FloorToInt((float)tempCommands.Length / (float)pagingSize);
+                        }
+
+                        if (totalPages > 1)
+                        {
+                            pageStartIndex = page * pagingSize;
+                            pageEndIndex = Mathf.Min(pageStartIndex + pagingSize, tempCommands.Length); 
+                        } else
+                            page = 0;                    
+                    }
+
+                    for (int i = pageStartIndex; i < pageEndIndex; i++)
                     {
                         if (i % 2 == 0)
                             EditorGUILayout.BeginHorizontal(guiBGAltColorA);
@@ -288,6 +336,21 @@ public class SequencerWindow : EditorWindow
                     }
                 }   
                 EditorGUILayout.EndVertical();  
+
+                if (totalPages > 1)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    {   
+                        if (GUILayout.Button("< previous page"))
+                            page = Mathf.Max(0, page - 1);                                           
+          
+                        GUILayout.Label(" Page: " + page + " out of " + totalPages);
+
+                        if (GUILayout.Button(" > next page"))
+                            page = Mathf.Min(totalPages, page + 1);
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
             }
             EditorGUILayout.EndScrollView(); 
         } else
@@ -295,6 +358,79 @@ public class SequencerWindow : EditorWindow
             lastSelectedSection -= 1;
         }
     }   
+
+    private void drawVariables()
+    {
+        EditorGUILayout.BeginVertical();
+        {            
+            EditorGUILayout.BeginHorizontal();
+            { 
+                GUILayout.Label("Variables");
+
+                GUILayout.Label("Variable Name:");
+                tempVarName = EditorGUILayout.TextField(tempVarName);
+                GUILayout.Label("Value:");
+                tempVarValue = EditorGUILayout.TextField(tempVarValue);
+
+                if (GUILayout.Button("Add Variable"))
+                {
+                    if (sequencerData.getIndexOfVariable(tempVarName) == -1)
+                    {
+                        sequencerData.variables.Add(new SequencerVariableModel(tempVarName, tempVarValue));
+                    }
+                }
+            }
+            EditorGUILayout.EndHorizontal();    
+   
+            string[] variableNames = sequencerData.getNamesOfVariables();
+
+            for (int i = 0; i < variableNames.Length; i++)
+            {
+                EditorGUILayout.BeginHorizontal();
+                {  
+                    GUILayout.Label("Name of Variable:");
+                    GUILayout.Label(variableNames [i]);
+                    
+                    int varIndex = sequencerData.getIndexOfVariable(variableNames [i]);
+                    if (varIndex > -1)
+                    {
+                        GUILayout.Label("Initial value:");
+                        sequencerData.variables [varIndex].value = EditorGUILayout.TextField(sequencerData.variables [varIndex].value);
+                        if (GUILayout.Button("Delete this variable"))
+                        {
+                            sequencerData.variables.RemoveAt(varIndex);
+                        }
+                    }  
+                }
+                EditorGUILayout.EndHorizontal();        
+            }
+        }   
+        EditorGUILayout.EndVertical();  
+    }
+
+    private void drawImport()
+    {
+        EditorGUILayout.BeginHorizontal();
+        {
+            GUILayout.Label("Import");
+        
+            renpyTextAsset = EditorGUILayout.ObjectField(renpyTextAsset, typeof(TextAsset), true) as TextAsset;   
+
+            if (GUILayout.Button("Import Ren'Py script"))
+                doImportRenPy();
+        }   
+        EditorGUILayout.EndHorizontal();  
+    }
+
+    private void doImportRenPy()
+    {
+        if (renpyTextAsset != null)
+        {
+            SequencerRenPy renpyTranslator = new SequencerRenPy();
+            renpyTranslator.renpyToSequencer(renpyTextAsset, sequencerData);
+            Debug.LogWarning("Done!");
+        }
+    }
     
     //note this deletes all found with same target ( in general we dont want duplicate targets anyway)
     void doDeleteTarget(GameObject targetObject)
@@ -338,7 +474,7 @@ public class SequencerWindow : EditorWindow
             }
         }
 
-        sectionModel.name = newName;
+        sectionModel.rename(newName);
     }
 
     void doAddCommandToSection(int sectionIndex, int typeIndex)
@@ -351,7 +487,7 @@ public class SequencerWindow : EditorWindow
 
         Type type = SequencerCommandTypes.commandTypes [typeIndex];
         ScriptableObject temp = ScriptableObject.CreateInstance(type);
-        ((SequencerCommandBase)temp).init(sectionIndex, sequencerData);
+        ((SequencerCommandBase)temp).init(sequencerData.sections [sectionIndex].name, sequencerData);
 
         sequencerData.sections [sectionIndex].commandList.Add((SequencerCommandBase)temp);
 
@@ -368,7 +504,7 @@ public class SequencerWindow : EditorWindow
         
         Type type = SequencerCommandTypes.commandTypes [typeIndex];
         ScriptableObject temp = ScriptableObject.CreateInstance(type);
-        ((SequencerCommandBase)temp).init(sectionIndex, sequencerData);
+        ((SequencerCommandBase)temp).init(sequencerData.sections [sectionIndex].name, sequencerData);
         
         insertIndex = Mathf.Clamp(insertIndex, 0, sequencerData.sections [sectionIndex].commandList.Count);
 
@@ -399,7 +535,7 @@ public class SequencerWindow : EditorWindow
 
         foreach (SequencerCommandBase cmd in newModel.commandList)
         {
-            cmd.init(sequencerData.sections.Count, sequencerData);
+            cmd.init(newModel.name, sequencerData);
         }
 
         sequencerData.sections.Add(newModel);
@@ -422,6 +558,7 @@ public class SequencerWindow : EditorWindow
             foreach (SequencerCommandBase command in section.commandList)
             {
                 command.sequencerData = sequencerData;
+                command.sectionName = section.name;
             } 
         } 
     }

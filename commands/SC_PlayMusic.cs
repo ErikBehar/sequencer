@@ -19,6 +19,7 @@ public class SC_PlayMusic : SequencerCommandBase
     public override string commandId{ get { return "playMusic"; } }
     public override string commandType{ get { return "base"; } }
 
+    public string audioClipName;
     public AudioClip audioClip;
     public float volume = 1.0f;
     private string previousPlayingMusicClipName;
@@ -31,6 +32,7 @@ public class SC_PlayMusic : SequencerCommandBase
     override public SequencerCommandBase clone()
     {       
         SC_PlayMusic newCmd = ScriptableObject.CreateInstance(typeof(SC_PlayMusic)) as SC_PlayMusic;
+        newCmd.audioClipName = audioClipName;
         newCmd.audioClip = audioClip;
         newCmd.volume = volume;
         return base.clone(newCmd);        
@@ -48,9 +50,16 @@ public class SC_PlayMusic : SequencerCommandBase
             previousPlayingMusicClipName = SoundManager.Get().getCurrentMusicClipName();
             previousVolume = SoundManager.Get().musicVolume;
 
-            if (SoundManager.Get().getMusicByName(audioClip.name) == null)
+            if (audioClipName != SoundManager.nullSoundName)
+            {
+                audioClip = SoundManager.Get().getMusicByName(audioClipName);
+            } else if (SoundManager.Get().getMusicByName(audioClip.name) == null)
+            {
                 SoundManager.Get().musicClips.Add(audioClip);
-            SoundManager.Get().playMusic(audioClip.name, volume);
+                audioClipName = audioClip.name;
+            }
+
+            SoundManager.Get().playMusic(audioClipName, volume);
         }
         
         myPlayer.callBackFromCommand(); 
@@ -76,6 +85,9 @@ public class SC_PlayMusic : SequencerCommandBase
     #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
+        GUILayout.Label("Audio Clip Name (optional):");
+        audioClipName = EditorGUILayout.TextField(audioClipName); 
+
         GUILayout.Label("Audio Clip:");
         audioClip = EditorGUILayout.ObjectField(audioClip, typeof(AudioClip), true) as AudioClip;  
 

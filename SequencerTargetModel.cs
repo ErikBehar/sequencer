@@ -5,7 +5,7 @@ using System;
 [Serializable]
 public class SequencerTargetModel
 {
-    public string type;
+    public string type = SequencerTargetTypes.positional;
     public GameObject target;
     public string nickname; 
 

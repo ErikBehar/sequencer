@@ -22,10 +22,14 @@ public class SC_Jump : SequencerCommandBase
     public override string commandId{ get { return "jump"; } }
     public override string commandType{ get { return "base"; } }
 
-    public int targetSectionIndex = 0;
+    public string targetSectionName = "";
     public int commandIndex = 0;
+    
+    [HideInInspector]
+    public SequencerCommandBase
+        targetCommand;
 
-    private int previousTargetSectionIndex = -1;
+    private string previousTargetSectionName = "";
     private string[] commandIndexes;
 
     override public void initChild()
@@ -35,9 +39,10 @@ public class SC_Jump : SequencerCommandBase
     override public SequencerCommandBase clone()
     {       
         SC_Jump newCmd = ScriptableObject.CreateInstance(typeof(SC_Jump)) as SC_Jump;
-        newCmd.targetSectionIndex = targetSectionIndex;
+        newCmd.targetSectionName = targetSectionName;
         newCmd.commandIndex = commandIndex;
         newCmd.commandIndexes = new string[commandIndexes.Length ];
+        newCmd.targetCommand = targetCommand;
         Array.Copy(commandIndexes, newCmd.commandIndexes, commandIndexes.Length);
         return base.clone(newCmd);        
     }
@@ -50,8 +55,7 @@ public class SC_Jump : SequencerCommandBase
             undo();
         } else
         {
-            string[] nicks = sequencerData.getSectionNames();
-            myPlayer.jumpToScene(nicks [targetSectionIndex], commandIndex);
+            myPlayer.jumpToScene(targetSectionName, commandIndex);
         }
     }
     
@@ -67,26 +71,66 @@ public class SC_Jump : SequencerCommandBase
     override public void backward(SequencePlayer player)
     {
     }
-#if UNITY_EDITOR
+
+    #if UNITY_EDITOR
     override public void drawCustomUi()
     { 
         string[] nicks = sequencerData.getSectionNames();
         
         GUILayout.Label("Jump to Section:");
-        targetSectionIndex = EditorGUILayout.Popup(targetSectionIndex, nicks, GUILayout.Width(100));
+        targetSectionName = nicks [EditorGUILayout.Popup(sequencerData.getIndexOfSection(targetSectionName), nicks, GUILayout.Width(100))];
 
-        if (targetSectionIndex != previousTargetSectionIndex)
+        if (targetSectionName != previousTargetSectionName)
         {
-            previousTargetSectionIndex = targetSectionIndex;
-            int[] numberRange = Enumerable.Range(0, sequencerData.sections [targetSectionIndex].commandList.Count).ToArray();
+            previousTargetSectionName = targetSectionName;
+            int[] numberRange = Enumerable.Range(0, sequencerData.sections [sequencerData.getIndexOfSection(targetSectionName)].commandList.Count).ToArray();
             commandIndexes = new string[numberRange.Length];
             for (int i = 0; i < numberRange.Length; i++)
             {
                 commandIndexes [i] = numberRange [i].ToString(); 
-            } 
+            }
+
+            commandIndex = Mathf.Clamp(commandIndex, 0, commandIndexes.Length - 1);
         }
+
         GUILayout.Label("Command Index:");
         commandIndex = EditorGUILayout.Popup(commandIndex, commandIndexes, GUILayout.Width(100));
+
+        SequencerSectionModel sectionModel = sequencerData.getSectionModel(targetSectionName);
+        if (sectionModel.commandList != null && sectionModel.commandList.Count > 0 && sectionModel.commandList.Count > commandIndex)
+            targetCommand = sectionModel.commandList [commandIndex];
     }
-#endif
+    #endif
+
+    override public void indexWasUpdated()
+    {
+        checkIndexCorrectness();
+    }
+
+    public void checkIndexCorrectness()
+    {
+        SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
+        if (sectionModel.commandList [commandIndex] != targetCommand)
+        {
+            bool found = false;
+            foreach (SequencerCommandBase cmd in sectionModel.commandList)
+            {
+                if (cmd == targetCommand)
+                {
+                    commandIndex = sectionModel.commandList.IndexOf(cmd);
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (!found)
+            {
+                Debug.LogWarning("Couldnt find jump target command after index change ! Will use whatever is at previous index! " +
+                    "Was looking for index:" + commandIndex + " in section: " + sectionModel.name + " is jump command at index: " + 
+                    sequencerData.getSectionModel(sectionName).commandList.IndexOf(this));
+                
+                targetCommand = sectionModel.commandList [commandIndex];
+            }
+        }
+    }
 }
