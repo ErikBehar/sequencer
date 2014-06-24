@@ -54,7 +54,17 @@ public class SC_SetVariable : SequencerCommandBase
             undo();
         } else
         {
-            string result = variableValue;
+            string result = "0"; //defaults to 0 ? this might not always be great
+            
+            if (myPlayer.runningTimeVariablesDictionary.ContainsKey(variableName))
+            {
+                previousValue = myPlayer.runningTimeVariablesDictionary [variableName];
+            } else
+            {
+                myPlayer.runningTimeVariablesDictionary.Add(variableName, result);
+                previousValue = result;
+            }
+
             if (typeIndex == 1)
             {
                 myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalInt", parseTextForVars(variableValue));
@@ -65,15 +75,7 @@ public class SC_SetVariable : SequencerCommandBase
                 result = myPlayer.lastEvalResultFloat.ToString();
             }
 
-            if (myPlayer.runningTimeVariablesDictionary.ContainsKey(variableName))
-            {
-                previousValue = myPlayer.runningTimeVariablesDictionary [variableName];
-                myPlayer.runningTimeVariablesDictionary [variableName] = result;
-            } else
-            {
-                myPlayer.runningTimeVariablesDictionary.Add(variableName, result);
-                previousValue = result;
-            }
+            myPlayer.runningTimeVariablesDictionary [variableName] = result;
         }
 
         myPlayer.callBackFromCommand();
@@ -159,7 +161,7 @@ public class SC_SetVariable : SequencerCommandBase
                     text = text.Replace("[" + substring + "]", myPlayer.runningTimeVariablesDictionary [substring]);
                 } else
                 {
-                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - indexClose);
+                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - (indexClose + 1));
                 }
             }
         }

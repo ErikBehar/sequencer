@@ -106,16 +106,24 @@ public class SC_VN_Choice : SequencerCommandBase
                         GUILayout.Label("Jump to Section:");
                         sectionNameList [i] = nicks [EditorGUILayout.Popup(sequencerData.getIndexOfSection(sectionNameList [i]), nicks, GUILayout.Width(100))];
 
-                        int[] commands = Enumerable.Repeat(0, sequencerData.sections [sequencerData.getIndexOfSection(sectionNameList [i])].commandList.Count).ToArray();
-                        string[] commandStr = new string[commands.Length];
-                        for (int c = 0; c < commands.Length; c++)
+                        int commandIndexMax = sequencerData.sections [sequencerData.getIndexOfSection(sectionNameList [i])].commandList.Count;
+                        if (commandIndexMax < 46) //max show for in popup style, otherwise use input field
                         {
-                            commandStr [c] = c.ToString();
-                        }   
-                        commandIndexList [i] = Mathf.Clamp(commandIndexList [i], 0, commands.Length - 1);
+                            int[] commands = Enumerable.Repeat(0, commandIndexMax).ToArray();
+                            string[] commandStr = new string[commands.Length];
+                            for (int c = 0; c < commands.Length; c++)
+                            {
+                                commandStr [c] = c.ToString();
+                            }   
+                            commandIndexList [i] = Mathf.Clamp(commandIndexList [i], 0, commands.Length - 1);
 
-                        GUILayout.Label("Jump to command Index:");
-                        commandIndexList [i] = EditorGUILayout.Popup(commandIndexList [i], commandStr);
+                            GUILayout.Label("Jump to command Index:");
+                            commandIndexList [i] = EditorGUILayout.Popup(commandIndexList [i], commandStr);
+                        } else
+                        {
+                            commandIndexList [i] = Mathf.Clamp(EditorGUILayout.IntField(commandIndexList [i]), 0, commandIndexMax - 1);
+                        }
+                        
                         targetCommandList [i] = sequencerData.getSectionModel(sectionNameList [i]).commandList [commandIndexList [i]];
                     }
                     EditorGUILayout.EndHorizontal();  
@@ -193,7 +201,9 @@ public class SC_VN_Choice : SequencerCommandBase
                 
                 if (!found)
                 {
-                    Debug.LogWarning("Couldnt find jump target command after index change ! Will use whatever is at previous index!");
+                    Debug.LogWarning("Couldnt find jump target command after index change ! Will use whatever is at previous index!" + 
+                        "Was looking for index:" + commandIndexList [i] + " in section: " + sectionModel.name + " is Choice command at index: " + 
+                        sequencerData.getSectionModel(sectionName).commandList.IndexOf(this));
                     targetCommandList [i] = sectionModel.commandList [commandIndexList [i]];
                 }
             }

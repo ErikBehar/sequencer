@@ -34,6 +34,10 @@ public class SequencerRenPy
                     currentSection = checkSectionExistsOrCreate(splitString [1], sequencerData);
                     break;
                 case ("scene"):
+                    //also add a clearAll automatically ( cause I think ren'py does this on scene switch )
+                    SC_ClearAll clear = ScriptableObject.CreateInstance(typeof(SC_ClearAll)) as SC_ClearAll;
+                    initCommandAndAddToSection(currentSection, clear, sequencerData);
+
                     //bg's are treated like characters cause you can manipulate them and move em around
                     //scene bg park with wipeleft
                     SC_VN_Show show = ScriptableObject.CreateInstance(typeof(SC_VN_Show)) as SC_VN_Show;
@@ -271,29 +275,71 @@ public class SequencerRenPy
                     playSfx.audioClipName = splitString [1];           
                     break;
                 case ("$"):
-                    if (splitString [1].Contains("renpy."))
+                    if (myString.Contains("renpy."))
                     {   
-                        string[] furtherSplit = splitString [1].Replace("renpy.", "").Split(new char[]{'('}, StringSplitOptions.None);
-                        if (furtherSplit [0] == "pause")
+                        if (myString.Contains("renpy.pause"))
                         {
+                            string[] furtherSplit = splitString [1].Replace("renpy.", "").Split(new char[]{'('}, StringSplitOptions.None);
+                            
                             pause = ScriptableObject.CreateInstance(typeof(SC_Pause)) as SC_Pause;
                             initCommandAndAddToSection(currentSection, pause, sequencerData);
                             string[] againSplit = furtherSplit [1].Split(new char[]{')'}, StringSplitOptions.None);
     
                             pause.time = float.Parse(againSplit [0]);
-                            commandWasValid = true;
+                            break;
+                        } else if (myString.Contains("renpy.input"))
+                        {
+                            SC_InputVariable input = ScriptableObject.CreateInstance(typeof(SC_InputVariable)) as SC_InputVariable; 
+                            initCommandAndAddToSection(currentSection, input, sequencerData);
+                            
+                            input.variableName = splitString [1];
                             break;
                         }
-                        if (furtherSplit [0] == "input")
+
+                        commandWasValid = false;
+                        string failLine = string.Join(" ", splitString);
+                        
+                        //only print out lines that are not empty
+                        if (failLine.Length > 0 && failLine != " ")
+                            Debug.Log("Line discarded: " + failLine);
+                    } else
+                    {
+                        //check for variables 
+                        SC_SetVariable variable = ScriptableObject.CreateInstance(typeof(SC_SetVariable)) as SC_SetVariable; 
+                        initCommandAndAddToSection(currentSection, variable, sequencerData);
+                        
+                        variable.variableName = splitString [1];
+                        variable.variableValue = string.Join(" ", splitString, 2, splitString.Length - 2);
+                        //TODO: does this make sense ? if > or < or ==  bool, if / then float, else + )  
+                        if (!variable.variableValue.Contains(".") && (variable.variableValue.Contains(">") || variable.variableValue.Contains("<") || variable.variableValue.Contains("==")
+                            || variable.variableValue.Contains("+") || variable.variableValue.Contains("-") || variable.variableValue.Contains("*")))
                         {
-                            //TODO deal with player input here
+                            variable.typeIndex = 1;
+                        } else if (variable.variableValue.Contains(".") || variable.variableValue.Contains("/"))
+                        {
+                            variable.typeIndex = 2;
+                        } else
+                            variable.typeIndex = 0;
+
+                        //attempt to fix assignments 
+                        if ( variable.variableValue.Contains("+=") || variable.variableValue.Contains("-=") || variable.variableValue.Contains("*=") || variable.variableValue.Contains("/=") || (variable.variableValue.Contains("=") && !variable.variableValue.Contains("==") ))
+                        {
+                            if( variable.variableValue[0] == '+' || variable.variableValue[0] == '-' || variable.variableValue[0] == '*' || variable.variableValue[0] == '/' || variable.variableValue[0] == '=')
+                            {
+                                variable.variableValue = "[" + variable.variableName + "] " + variable.variableValue.Replace( "=" , " ") ;
+                            }
                         }
-                    }
-                    commandWasValid = false;
-                    //TODO  deal with variables here
+                    }   
                     break;
                 case ( "if"):
                     //TODO deal with "if" / "else" variable case 
+                    //just going to drop a expression jump here... 
+                    SC_VN_ExpressionJump expJump = ScriptableObject.CreateInstance(typeof(SC_VN_ExpressionJump)) as SC_VN_ExpressionJump; 
+                    initCommandAndAddToSection(currentSection, expJump, sequencerData);
+
+                    expJump.size = 1;
+                    expJump.expressionList = new List<string>();
+                    expJump.expressionList.Add(string.Join(" ", splitString, 1, splitString.Length - 1));
                     break;
                 default:                    
                     //Add jumps at end of choices  
@@ -313,7 +359,7 @@ public class SequencerRenPy
                             }
                         }   
 
-                        commandWasValid = false; // only so the bottom thing works out
+                        commandWasValid = false; // this is valid, but exception so the bottom thing works out
                         break;  
                     }
                     //end add jump at end of choices

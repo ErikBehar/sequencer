@@ -1,4 +1,5 @@
 ﻿#pragma strict
+#pragma downcast
 
 public function evalBool( expression:String):boolean
 {

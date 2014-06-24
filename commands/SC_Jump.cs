@@ -79,22 +79,29 @@ public class SC_Jump : SequencerCommandBase
         
         GUILayout.Label("Jump to Section:");
         targetSectionName = nicks [EditorGUILayout.Popup(sequencerData.getIndexOfSection(targetSectionName), nicks, GUILayout.Width(100))];
-
-        if (targetSectionName != previousTargetSectionName)
+        
+        int commandIndexMax = sequencerData.sections [sequencerData.getIndexOfSection(targetSectionName)].commandList.Count;
+        if (commandIndexMax < 46) //max show for in popup style, otherwise use input field
         {
-            previousTargetSectionName = targetSectionName;
-            int[] numberRange = Enumerable.Range(0, sequencerData.sections [sequencerData.getIndexOfSection(targetSectionName)].commandList.Count).ToArray();
-            commandIndexes = new string[numberRange.Length];
-            for (int i = 0; i < numberRange.Length; i++)
+            if (targetSectionName != previousTargetSectionName)
             {
-                commandIndexes [i] = numberRange [i].ToString(); 
+                previousTargetSectionName = targetSectionName;
+                int[] numberRange = Enumerable.Range(0, commandIndexMax).ToArray();
+                commandIndexes = new string[numberRange.Length];
+                for (int i = 0; i < numberRange.Length; i++)
+                {
+                    commandIndexes [i] = numberRange [i].ToString(); 
+                }
+    
+                commandIndex = Mathf.Clamp(commandIndex, 0, commandIndexes.Length - 1);
             }
-
-            commandIndex = Mathf.Clamp(commandIndex, 0, commandIndexes.Length - 1);
+    
+            GUILayout.Label("Command Index:");
+            commandIndex = EditorGUILayout.Popup(commandIndex, commandIndexes, GUILayout.Width(100));
+        } else
+        {
+            commandIndex = Mathf.Clamp(EditorGUILayout.IntField(commandIndex), 0, commandIndexMax - 1);
         }
-
-        GUILayout.Label("Command Index:");
-        commandIndex = EditorGUILayout.Popup(commandIndex, commandIndexes, GUILayout.Width(100));
 
         SequencerSectionModel sectionModel = sequencerData.getSectionModel(targetSectionName);
         if (sectionModel.commandList != null && sectionModel.commandList.Count > 0 && sectionModel.commandList.Count > commandIndex)
@@ -110,7 +117,7 @@ public class SC_Jump : SequencerCommandBase
     public void checkIndexCorrectness()
     {
         SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
-        if (sectionModel.commandList [commandIndex] != targetCommand)
+        if (commandIndex == -1 || commandIndex == sectionModel.commandList.Count || sectionModel.commandList [commandIndex] != targetCommand)
         {
             bool found = false;
             foreach (SequencerCommandBase cmd in sectionModel.commandList)
@@ -129,7 +136,15 @@ public class SC_Jump : SequencerCommandBase
                     "Was looking for index:" + commandIndex + " in section: " + sectionModel.name + " is jump command at index: " + 
                     sequencerData.getSectionModel(sectionName).commandList.IndexOf(this));
                 
-                targetCommand = sectionModel.commandList [commandIndex];
+                if (commandIndex != -1)
+                    targetCommand = sectionModel.commandList [commandIndex];
+                else if (commandIndex == -1 && sectionModel.commandList.Count == 0)
+                    Debug.LogWarning("The section might be empty! Empty Sections cant be jumped to correctly !");
+                else if (commandIndex == -1 && sectionModel.commandList.Count > 0)
+                {   
+                    commandIndex = 0;
+                    targetCommand = sectionModel.commandList [commandIndex];
+                }
             }
         }
     }

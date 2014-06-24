@@ -90,6 +90,8 @@ public class SC_VN_Modify : SequencerCommandBase
         SequencerTargetModel model = sequencerData.getTargetModel(targetName);
         if (model != null)
         {
+            if (model.target == null)
+                return;
             VN_CharBase charcomp = model.target.GetComponent<VN_CharBase>();
             
             if (charcomp != null)

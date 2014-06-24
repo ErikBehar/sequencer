@@ -61,7 +61,7 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                 int foundIndex = -1;
                 for (int i = 0; i < expressionList.Count; i++)
                 {
-                    myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalBool", expressionList [i]);
+                    myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalBool", parseTextForVars(expressionList [i]));
                     if (myPlayer.lastEvalResultBool)
                     {
                         foundIndex = i;
@@ -110,16 +110,23 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                         GUILayout.Label("Jump to Section:");
                         sectionNameList [i] = nicks [EditorGUILayout.Popup(sequencerData.getIndexOfSection(sectionNameList [i]), nicks, GUILayout.Width(100))];
 
-                        int[] commands = Enumerable.Repeat(0, sequencerData.sections [sequencerData.getIndexOfSection(sectionNameList [i])].commandList.Count).ToArray();
-                        string[] commandStr = new string[commands.Length];
-                        for (int c = 0; c < commands.Length; c++)
+                        int commandIndexMax = sequencerData.sections [sequencerData.getIndexOfSection(sectionNameList [i])].commandList.Count;
+                        if (commandIndexMax < 46) //max show for in popup style, otherwise use input field
                         {
-                            commandStr [c] = c.ToString();
-                        }   
-                        commandIndexList [i] = Mathf.Clamp(commandIndexList [i], 0, commands.Length - 1);
+                            int[] commands = Enumerable.Repeat(0, commandIndexMax).ToArray();
+                            string[] commandStr = new string[commands.Length];
+                            for (int c = 0; c < commands.Length; c++)
+                            {
+                                commandStr [c] = c.ToString();
+                            }   
+                            commandIndexList [i] = Mathf.Clamp(commandIndexList [i], 0, commands.Length - 1);
 
-                        GUILayout.Label("Jump to command Index:");
-                        commandIndexList [i] = EditorGUILayout.Popup(commandIndexList [i], commandStr);
+                            GUILayout.Label("Jump to command Index:");
+                            commandIndexList [i] = EditorGUILayout.Popup(commandIndexList [i], commandStr);
+                        } else
+                        {
+                            commandIndexList [i] = Mathf.Clamp(EditorGUILayout.IntField(commandIndexList [i]), 0, commandIndexMax - 1);
+                        }
                         targetCommandList [i] = sequencerData.getSectionModel(sectionNameList [i]).commandList [commandIndexList [i]];
                     }
                     EditorGUILayout.EndHorizontal();  
@@ -202,5 +209,28 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                 }
             }
         }
+    }
+
+    private string parseTextForVars(string text)
+    {
+        //variables
+        while (text.IndexOf( "[" ) > -1)
+        {
+            int indexOpen = text.IndexOf("[");
+            if (indexOpen > -1)
+            {
+                int indexClose = text.IndexOf("]");
+                string substring = text.Substring(indexOpen + 1, indexClose - (indexOpen + 1));
+                if (myPlayer.runningTimeVariablesDictionary.ContainsKey(substring))
+                {
+                    text = text.Replace("[" + substring + "]", myPlayer.runningTimeVariablesDictionary [substring]);
+                } else
+                {
+                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - (indexClose + 1));
+                }
+            }
+        }
+        
+        return text;
     }
 }

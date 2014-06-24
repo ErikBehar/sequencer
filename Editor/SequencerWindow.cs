@@ -247,8 +247,9 @@ public class SequencerWindow : EditorWindow
                     doDuplicateSection(sequencerData.sections [lastSelectedSection]);
             }
 
-            if (GUILayout.Button("Fix Commands"))
-                doFixCommands();
+            //developer fix tool
+//            if (GUILayout.Button("Fix Commands"))
+//                doFixCommands();
         }   
         EditorGUILayout.EndHorizontal();  
 
@@ -299,28 +300,44 @@ public class SequencerWindow : EditorWindow
                 int pageEndIndex;
                 int totalPages = 1;
 
+                SequencerCommandBase[] tempCommands = new SequencerCommandBase[sequencerData.sections [lastSelectedSection].commandList.Count]; 
+                sequencerData.sections [lastSelectedSection].commandList.CopyTo(tempCommands);
+                
+                pageEndIndex = tempCommands.Length;
+                
+                if (paging)
+                {
+                    if (tempCommands.Length > pagingSize)
+                    {
+                        totalPages = Mathf.FloorToInt((float)tempCommands.Length / (float)pagingSize);
+                    }
+                    
+                    if (totalPages > 1)
+                    {
+                        pageStartIndex = page * pagingSize;
+                        pageEndIndex = Mathf.Min(pageStartIndex + pagingSize, tempCommands.Length); 
+                    } else
+                        page = 0;                    
+
+
+                    if (totalPages > 1)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        {   
+                            if (GUILayout.Button("< previous page"))
+                                page = Mathf.Max(0, page - 1);                                           
+                            
+                            GUILayout.Label(" Page: " + page + " out of " + totalPages);
+                            
+                            if (GUILayout.Button(" > next page"))
+                                page = Mathf.Min(totalPages, page + 1);
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                }
+
                 EditorGUILayout.BeginVertical();
                 {
-                    SequencerCommandBase[] tempCommands = new SequencerCommandBase[sequencerData.sections [lastSelectedSection].commandList.Count]; 
-                    sequencerData.sections [lastSelectedSection].commandList.CopyTo(tempCommands);
-
-                    pageEndIndex = tempCommands.Length;
-
-                    if (paging)
-                    {
-                        if (tempCommands.Length > pagingSize)
-                        {
-                            totalPages = Mathf.FloorToInt((float)tempCommands.Length / (float)pagingSize);
-                        }
-
-                        if (totalPages > 1)
-                        {
-                            pageStartIndex = page * pagingSize;
-                            pageEndIndex = Mathf.Min(pageStartIndex + pagingSize, tempCommands.Length); 
-                        } else
-                            page = 0;                    
-                    }
-
                     for (int i = pageStartIndex; i < pageEndIndex; i++)
                     {
                         if (i % 2 == 0)
@@ -335,22 +352,25 @@ public class SequencerWindow : EditorWindow
                         EditorGUILayout.EndHorizontal();
                     }
                 }   
-                EditorGUILayout.EndVertical();  
+                EditorGUILayout.EndVertical(); 
 
-                if (totalPages > 1)
+                if (paging)
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    {   
-                        if (GUILayout.Button("< previous page"))
-                            page = Mathf.Max(0, page - 1);                                           
-          
-                        GUILayout.Label(" Page: " + page + " out of " + totalPages);
-
-                        if (GUILayout.Button(" > next page"))
-                            page = Mathf.Min(totalPages, page + 1);
+                    if (totalPages > 1)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        {   
+                            if (GUILayout.Button("< previous page"))
+                                page = Mathf.Max(0, page - 1);                                           
+                        
+                            GUILayout.Label(" Page: " + page + " out of " + totalPages);
+                        
+                            if (GUILayout.Button(" > next page"))
+                                page = Mathf.Min(totalPages, page + 1);
+                        }
+                        EditorGUILayout.EndHorizontal();
                     }
-                    EditorGUILayout.EndHorizontal();
-                }
+                } 
             }
             EditorGUILayout.EndScrollView(); 
         } else
@@ -551,6 +571,7 @@ public class SequencerWindow : EditorWindow
         }
     }
 
+    //developer function to force fix commands 
     void doFixCommands()
     {
         foreach (SequencerSectionModel section in sequencerData.sections)
