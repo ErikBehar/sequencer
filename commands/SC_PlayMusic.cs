@@ -50,7 +50,7 @@ public class SC_PlayMusic : SequencerCommandBase
             previousPlayingMusicClipName = SoundManager.Get().getCurrentMusicClipName();
             previousVolume = SoundManager.Get().musicVolume;
 
-            if (audioClipName != SoundManager.nullSoundName)
+            if (audioClipName != SoundManager.nullSoundName && audioClipName.Length != 0 && audioClipName != "" && audioClipName != " ")
             {
                 audioClip = SoundManager.Get().getMusicByName(audioClipName);
             } else if (SoundManager.Get().getMusicByName(audioClip.name) == null)

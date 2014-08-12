@@ -115,4 +115,12 @@ public class VN_Character : VN_CharBase
         }
         return "";
     }
+
+    public override void flip()
+    {
+        if (transform.localScale.x == 1)
+            transform.localScale = new Vector3(-1, 1, 1);
+        else
+            transform.localScale = Vector3.one;
+    }
 }

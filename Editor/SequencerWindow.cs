@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 #if UNITY_EDITOR
 using UnityEditor;
- #endif
+#endif
 using UnityEngine;
 
 public class SequencerWindow : EditorWindow
@@ -15,7 +16,7 @@ public class SequencerWindow : EditorWindow
     private GameObject dataHolderValGoLastVal = null;
     private static GameObject dataHolderGO = null;
     public static SequencerData sequencerData;
-    private static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables"
+    private static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables", "statistics"
 
     private static int lastSelectedSection = -1;
     private static string renameBoxString = "";
@@ -27,11 +28,13 @@ public class SequencerWindow : EditorWindow
     private static int insertIndex = 0;
 
     private TextAsset renpyTextAsset;
+    private string importTextAreaText = "";
 
     public static bool paging = true;
     private int pagingSize = 100;
     private int page = 0;
 
+    //TODO: figure out why I added this first temp variable, see if necesarry
     private string tempVarName = "variableX";
     private string tempVarValue = "42";
 
@@ -70,6 +73,7 @@ public class SequencerWindow : EditorWindow
         guiBGAltColorB.normal.background = littleTextureForBG_B;
     }
 
+    [MenuItem("Window/Sequencer Window")]
     public static void show()
     {
         thisWindowLive = (SequencerWindow)EditorWindow.GetWindow(typeof(SequencerWindow));
@@ -80,12 +84,6 @@ public class SequencerWindow : EditorWindow
         show();
         thisWindowLive.Close();
         thisWindowLive = null;
-    }
-    
-    [MenuItem("Window/Sequencer Window")]
-    static void startAutoPrefabJobEditor()
-    {
-        show();
     }
     #endregion
 
@@ -114,6 +112,8 @@ public class SequencerWindow : EditorWindow
                     drawImport();
                 else if (lastSelectedArea == "variables")
                     drawVariables();
+                else if (lastSelectedArea == "statistics")
+                    drawStatistics();
             }
         }
         EditorGUILayout.EndVertical();
@@ -177,6 +177,11 @@ public class SequencerWindow : EditorWindow
             if (GUILayout.Button("Import"))
             {   
                 lastSelectedArea = "import";
+            }
+
+            if (GUILayout.Button("Statistics"))
+            {   
+                lastSelectedArea = "statistics";
             }
         }   
         EditorGUILayout.EndHorizontal();   
@@ -379,6 +384,165 @@ public class SequencerWindow : EditorWindow
         }
     }   
 
+    #region stats
+    private List<bool> sectionForStatistics = new List<bool>();
+    private int stat_choices = 0;
+    private int stat_speechBubbles = 0;
+    private int stat_words = 0;
+    private int stat_music = 0;
+    private int stat_sfx = 0;
+    private int stat_variables = 0;
+    private int stat_characters = 0;
+
+    private List<string> uniqueMusicList = new List<string>();
+    private List<string> uniqueAudioList = new List<string>();
+    private List<string> uniqueVariableList = new List<string>();
+    private List<string> uniqueCharactersList = new List<string>();
+
+    private void drawStatistics()
+    {
+        EditorGUILayout.BeginVertical();
+        { 
+            EditorGUILayout.LabelField("Number of sections: " + sequencerData.sections.Count);
+
+            int length = sequencerData.sections.Count;
+            for (int i = 0; i < length; i++)
+            {
+                EditorGUILayout.BeginHorizontal();
+                {
+                    if (sectionForStatistics.Count == i)
+                        sectionForStatistics.Add(true);
+                    EditorGUILayout.LabelField(sequencerData.sections [i].name);
+                    sectionForStatistics [i] = EditorGUILayout.Toggle(sectionForStatistics [i]);
+                }
+                EditorGUILayout.EndHorizontal(); 
+            }
+
+            if (GUILayout.Button("Generate Stats for selected sections"))
+                generateStats();
+
+            EditorGUILayout.LabelField("Branches/Choices: " + stat_choices.ToString());
+            EditorGUILayout.LabelField("Speech Bubbles: " + stat_speechBubbles.ToString());
+            EditorGUILayout.LabelField("Total Words: " + stat_words.ToString());
+            EditorGUILayout.LabelField("Music Played: " + stat_music.ToString());
+            EditorGUILayout.LabelField("SFX Played: " + stat_sfx.ToString());
+            EditorGUILayout.LabelField("Variables Used: " + stat_variables.ToString());
+            EditorGUILayout.LabelField("Characters Used: " + stat_characters.ToString());
+
+            if (GUILayout.Button("Print stats to console for copy/paste"))
+            {
+                int selectedSections = 0;
+                foreach (bool enabledSection in sectionForStatistics)
+                    selectedSections += (enabledSection) ? 1 : 0;
+                Debug.LogWarning("Selected Sections: " + selectedSections + "\n" +
+                    "Branches/Choices: " + stat_choices.ToString() + "\n" +
+                    "Speech Bubbles: " + stat_speechBubbles.ToString() + "\n" +
+                    "Total Words: " + stat_words.ToString() + "\n" +
+                    "Music Played: " + stat_music.ToString() + "\n" +
+                    "SFX Played: " + stat_sfx.ToString() + "\n" +
+                    "Variables Used: " + stat_variables.ToString() + "\n" +
+                    "Characters Used: " + stat_characters.ToString()
+                );
+            }
+        }   
+        EditorGUILayout.EndVertical();  
+    }
+
+    private void generateStats()
+    {
+        //reset
+        stat_choices = 0;
+        stat_speechBubbles = 0;
+        stat_words = 0;
+        stat_music = 0;
+        stat_sfx = 0;
+        stat_variables = 0;
+        stat_characters = 0;
+
+        uniqueMusicList.Clear();
+        uniqueAudioList.Clear();
+        uniqueVariableList.Clear();
+        uniqueCharactersList.Clear();
+
+        int length = sequencerData.sections.Count;
+        for (int i = 0; i < length; i++)
+        {
+            if (sectionForStatistics [i])
+            {
+                foreach (SequencerCommandBase seqCommand in sequencerData.sections[i].commandList)
+                {
+                    Type typeCommand = seqCommand.GetType();
+
+                    if (typeCommand == typeof(SC_VN_Choice) || typeCommand == typeof(SC_VN_ExpressionJump))
+                        stat_choices += 1;
+                    if (typeCommand == typeof(SC_VN_Dialog))
+                        stat_speechBubbles += 1;
+                    if (typeCommand == typeof(SC_VN_Dialog))
+                        stat_words += wordCount(((SC_VN_Dialog)seqCommand).text);
+                    if (typeCommand == typeof(SC_PlayMusic))
+                    {
+                        string name = ((SC_PlayMusic)seqCommand).audioClipName;
+                        if (name == null || name.Length == 0 || name == SoundManager.nullSoundName)
+                            name = ((SC_PlayMusic)seqCommand).audioClip.name;
+
+                        if (!uniqueMusicList.Contains(name))
+                        {
+                            uniqueMusicList.Add(name);
+                            stat_music += 1;
+                        }
+                    }
+                    if (typeCommand == typeof(SC_PlaySfx))
+                    {
+                        string name = ((SC_PlaySfx)seqCommand).audioClipName;
+                        if (name == null || name.Length == 0 || name == SoundManager.nullSoundName)
+                            name = ((SC_PlaySfx)seqCommand).audioClip.name;
+                        
+                        if (!uniqueAudioList.Contains(name))
+                        {
+                            uniqueAudioList.Add(name);
+                            stat_sfx += 1;
+                        }
+                    }
+                    if (typeCommand == typeof(SC_InputVariable) || typeCommand == typeof(SC_SetVariable))
+                    {
+                        string name = "";
+                        if (typeCommand == typeof(SC_InputVariable))
+                            name = ((SC_InputVariable)seqCommand).variableName;
+                        else if (typeCommand == typeof(SC_SetVariable))
+                            name = ((SC_SetVariable)seqCommand).variableName;
+
+                        if (!uniqueVariableList.Contains(name))
+                        {
+                            uniqueVariableList.Add(name);
+                            stat_variables += 1;
+                        }
+                    }
+                    if (typeCommand == typeof(SC_VN_Show)) //TODO:  wouldnt really give you a better idea/number, would need a subtype -> // && sequencerData.getTargetModel(((SC_VN_Show)command).lastSelectedWho) == SequencerTargetTypes.character
+                    {
+                        string name = ((SC_VN_Show)seqCommand).lastSelectedWho;
+                        
+                        if (!uniqueCharactersList.Contains(name))
+                        {
+                            uniqueCharactersList.Add(name);
+                            stat_characters += 1;
+                        }
+                    }   
+                }
+            }
+        }
+    }
+    
+    public int wordCount(string txtToCount)
+    {
+        string pattern = "\\w+";
+        Regex regex = new Regex(pattern);
+        
+        int countedWords = regex.Matches(txtToCount).Count;
+        
+        return countedWords;
+    }
+    #endregion
+
     private void drawVariables()
     {
         EditorGUILayout.BeginVertical();
@@ -430,24 +594,44 @@ public class SequencerWindow : EditorWindow
 
     private void drawImport()
     {
-        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginVertical();
         {
-            GUILayout.Label("Import");
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Import");
         
-            renpyTextAsset = EditorGUILayout.ObjectField(renpyTextAsset, typeof(TextAsset), true) as TextAsset;   
+                renpyTextAsset = EditorGUILayout.ObjectField(renpyTextAsset, typeof(TextAsset), true) as TextAsset;   
 
-            if (GUILayout.Button("Import Ren'Py script"))
-                doImportRenPy();
-        }   
-        EditorGUILayout.EndHorizontal();  
+                if (GUILayout.Button("Import Ren'Py script"))
+                    doImportRenPy(null);
+            }   
+            EditorGUILayout.EndHorizontal();
+
+            GUILayout.Label("Paste a Ren'Py snippet (!If problems make sure it's Tab delimited!)");
+
+            importTextAreaText = EditorGUILayout.TextArea(importTextAreaText, GUILayout.ExpandWidth(true), GUILayout.Height(100));
+
+            if (GUILayout.Button("Import Ren'Py snippet into current selected section!"))
+            {
+                if (importTextAreaText.Length > 3)
+                    doImportRenPy(importTextAreaText);
+            }
+
+        }
+        EditorGUILayout.EndVertical();
+
+
     }
 
-    private void doImportRenPy()
+    private void doImportRenPy(string text)
     {
-        if (renpyTextAsset != null)
+        if (renpyTextAsset != null || text != null)
         {
             SequencerRenPy renpyTranslator = new SequencerRenPy();
-            renpyTranslator.renpyToSequencer(renpyTextAsset, sequencerData);
+            if (renpyTextAsset == null)
+                renpyTranslator.renpyToSequencer(text, sequencerData, lastSelectedSection);
+            else
+                renpyTranslator.renpyToSequencer(renpyTextAsset.text, sequencerData);
             Debug.LogWarning("Done!");
         }
     }
@@ -572,15 +756,15 @@ public class SequencerWindow : EditorWindow
     }
 
     //developer function to force fix commands 
-    void doFixCommands()
-    {
-        foreach (SequencerSectionModel section in sequencerData.sections)
-        {
-            foreach (SequencerCommandBase command in section.commandList)
-            {
-                command.sequencerData = sequencerData;
-                command.sectionName = section.name;
-            } 
-        } 
-    }
+//    void doFixCommands()
+//    {
+//        foreach (SequencerSectionModel section in sequencerData.sections)
+//        {
+//            foreach (SequencerCommandBase command in section.commandList)
+//            {
+//                command.sequencerData = sequencerData;
+//                command.sectionName = section.name;
+//            } 
+//        } 
+//    }
 }

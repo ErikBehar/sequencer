@@ -24,6 +24,9 @@ public class SC_PlaySfx : SequencerCommandBase
     public string audioClipName = SoundManager.nullSoundName;
     public AudioClip audioClip;
     public float volume = 1.0f;
+    public bool waitForAudioClipEnd = false;
+
+    private bool isWaiting = false;
 
     override public void initChild()
     {
@@ -47,7 +50,7 @@ public class SC_PlaySfx : SequencerCommandBase
             undo();
         } else
         {
-            if (audioClipName != SoundManager.nullSoundName)
+            if (audioClipName != SoundManager.nullSoundName && audioClipName.Length != 0 && audioClipName != "" && audioClipName != " ")
             {
                 audioClip = SoundManager.Get().getSfxByName(audioClipName);
             } else if (SoundManager.Get().getSfxByName(audioClip.name) == null)
@@ -58,20 +61,37 @@ public class SC_PlaySfx : SequencerCommandBase
             
             SoundManager.Get().playSfx(audioClipName, volume);
         }
-        
-        myPlayer.callBackFromCommand(); 
+
+        if (!waitForAudioClipEnd || player.inRewindMode)
+            myPlayer.callBackFromCommand();
+        else
+            myPlayer.StartCoroutine(doAudioWaitFinish());
     }
     
     override public void undo()
     {
+        isWaiting = false;
         if (audioClipName != SoundManager.nullSoundName)
             SoundManager.Get().stopPlayingSoundList(new List<string>(){audioClipName});
         else
             SoundManager.Get().stopPlayingSoundList(new List<AudioClip>(){audioClip});
     }
+
+    private IEnumerator doAudioWaitFinish()
+    {
+        isWaiting = true;
+        yield return new WaitForSeconds(audioClip.length);
+
+        if (isWaiting)
+        {
+            isWaiting = false;
+            myPlayer.callBackFromCommand();
+        }
+    }
     
     override public void forward(SequencePlayer player)
     {
+        isWaiting = false;
     }
     
     override public void backward(SequencePlayer player)
@@ -91,6 +111,8 @@ public class SC_PlaySfx : SequencerCommandBase
         GUILayout.Label("Volume 0-1.0:"); 
         volume = EditorGUILayout.FloatField(volume);
 
+        GUILayout.Label("Wait For AudioClip to end before continue? ");
+        waitForAudioClipEnd = EditorGUILayout.Toggle(waitForAudioClipEnd);
     }
     #endif
 }

@@ -2,8 +2,9 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 
-public class SequencerRenPy
+public class SequencerRenPy 
 {
     SequencerSectionModel currentSection;
 
@@ -12,9 +13,16 @@ public class SequencerRenPy
     Dictionary<SC_VN_Choice, int> choiceToCurrentResolvedIndex = new Dictionary<SC_VN_Choice, int>();
     List<int> choiceEndLineList = new List<int>();
 
-    public void renpyToSequencer(TextAsset textScript, SequencerData sequencerData)
+    //this is for snippets, may not have a scene target, so append to current selected scene!
+    public void renpyToSequencer(string text, SequencerData sequencerData, int lastSelectedSection)
     {
-        string[] splitFile = textScript.text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        currentSection = sequencerData.sections[ lastSelectedSection ];
+        renpyToSequencer(text, sequencerData);
+    }
+
+    public void renpyToSequencer(string text, SequencerData sequencerData)
+    {
+        string[] splitFile = text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         
         bool commandWasValid = true;
         for (int i=0; i < splitFile.Length; i++)
@@ -26,7 +34,6 @@ public class SequencerRenPy
             //for use below
             SequencerTargetModel targetModel;
     
-           
             commandWasValid = true;
             switch (firstWord)
             {
@@ -106,6 +113,9 @@ public class SequencerRenPy
                         i += 1;
 
                         //check for last line
+                        if ( i >= splitFile.Length)
+                            break;
+
                         string currString = splitFile [i]; 
                         string currStringCheck = splitFile [i].Replace('\t', ' '); 
                         string[] splitStringCheck = currStringCheck.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -486,6 +496,12 @@ public class SequencerRenPy
 
     void initCommandAndAddToSection(SequencerSectionModel sectionModel, SequencerCommandBase command, SequencerData data)
     {
+        if ( sectionModel == null)
+        {
+            Debug.LogWarning( "No Section to add command to ! ");
+            return;
+        }
+
         command.init(sectionModel.name, data);
         sectionModel.commandList.Add(command);
         command.updateAllIndex(); 

@@ -22,6 +22,7 @@ public class SequencerCommandTypes
         typeof(SC_SetVariable),
         typeof(SC_VN_ExpressionJump),
         typeof(SC_InputVariable),
+        typeof(SC_VN_Flip),
     }; 
     
     static public string[] getAsStringArray()

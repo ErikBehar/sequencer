@@ -5,7 +5,16 @@ public class VN_3D_Character : VN_CharBase
 {
     //TODO: custom editor to show both gameobject and string nickname next to each other
 
-    public GameObject[] attires;   
+    public GameObject[] attires;  
+
+    public Vector3 flipAngleVector;
+
+    private Vector3 initialRotation;
+
+    void Start()
+    {
+        initialRotation = transform.localRotation.eulerAngles;
+    }
 
     public override string[] getAttireNames()
     {
@@ -124,5 +133,13 @@ public class VN_3D_Character : VN_CharBase
         }
         
         return "";
+    }
+
+    public override void flip()
+    {
+        if (Mathf.Round(transform.localRotation.eulerAngles.y) == Mathf.Round(initialRotation.y))
+            transform.localRotation = Quaternion.Euler(flipAngleVector);
+        else
+            transform.localRotation = Quaternion.Euler(initialRotation);
     }
 }

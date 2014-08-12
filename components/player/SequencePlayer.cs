@@ -51,7 +51,9 @@ public class SequencePlayer : MonoBehaviour
     //Executes the current command we are on
     public void play()
     {   
-        Debug.Log("Play Section :" + "( " + currSectionIndex + ") " + sequencerData.sections [currSectionIndex].name + " command: " + "(" + currCommandIndex + " ) " + sequencerData.sections [currSectionIndex].commandList [currCommandIndex].name);
+        Debug.Log("Play Section :" + "( " + currSectionIndex + ") " + 
+            sequencerData.sections [currSectionIndex].name + " command: " + "(" + currCommandIndex +
+            " ) " + sequencerData.sections [currSectionIndex].commandList [currCommandIndex].name);
         sequencerData.sections [currSectionIndex].commandList [currCommandIndex].execute(this);
     }
     
@@ -99,9 +101,11 @@ public class SequencePlayer : MonoBehaviour
     //sets one command backward and executes
     public void backward()
     {
-        inRewindMode = true;
-
-        sequencerData.sections [currSectionIndex].commandList [currCommandIndex].backward(this);
+        if (!inRewindMode)
+        {
+            inRewindMode = true;
+            sequencerData.sections [currSectionIndex].commandList [currCommandIndex].backward(this);
+        }
 
         int lastJumpIndex = jumpsList.Count - 1;
 
