@@ -42,6 +42,8 @@ public class SequencerWindow : EditorWindow
 
     private SequencerTargetModel currentSetupTarget = null;
 
+    private bool allowCharacterStubs = false;
+
    #region Window Stuff
     void OnDisable()
     {
@@ -75,6 +77,8 @@ public class SequencerWindow : EditorWindow
         littleTextureForBG_B.hideFlags = HideFlags.HideAndDontSave;
         guiBGAltColorB = new GUIStyle();
         guiBGAltColorB.normal.background = littleTextureForBG_B;
+
+        currentSetupTarget = null;
     }
 
     [MenuItem("Window/Sequencer Window")]
@@ -718,6 +722,13 @@ public class SequencerWindow : EditorWindow
         {
             EditorGUILayout.BeginHorizontal();
             {
+                GUILayout.Label("Allow Creation of Character Target Stubs ");
+                allowCharacterStubs = EditorGUILayout.Toggle(allowCharacterStubs); 
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            {
                 GUILayout.Label("Import");
         
                 renpyTextAsset = EditorGUILayout.ObjectField(renpyTextAsset, typeof(TextAsset), true) as TextAsset;   
@@ -749,9 +760,9 @@ public class SequencerWindow : EditorWindow
         {
             SequencerRenPy renpyTranslator = new SequencerRenPy();
             if (renpyTextAsset == null)
-                renpyTranslator.renpyToSequencer(text, sequencerData, lastSelectedSection);
+                renpyTranslator.renpyToSequencer(text, sequencerData, lastSelectedSection, allowCharacterStubs);
             else
-                renpyTranslator.renpyToSequencer(renpyTextAsset.text, sequencerData);
+                renpyTranslator.renpyToSequencer(renpyTextAsset.text, sequencerData, allowCharacterStubs);
             Debug.LogWarning("Done!");
         }
     }

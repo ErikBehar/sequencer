@@ -54,7 +54,9 @@ public class SC_SetVariable : SequencerCommandBase
             undo();
         } else
         {
-            string result = "0"; //defaults to 0 ? this might not always be great
+            string result = "0";
+            if (typeIndex == 0)
+                result = variableValue;
             
             if (myPlayer.runningTimeVariablesDictionary.ContainsKey(variableName))
             {
@@ -148,9 +150,14 @@ public class SC_SetVariable : SequencerCommandBase
 
     private string parseTextForVars(string text)
     {
+        int count = 0;
+        int max = 30; //max 30 variable replacements, so we dont crash in weird cases
+
         //variables
-        while (text.IndexOf( "[" ) > -1)
+        while (text.IndexOf( "[" ) > -1 && count < max)
         {
+            count ++;
+
             int indexOpen = text.IndexOf("[");
             if (indexOpen > -1)
             {
@@ -165,6 +172,9 @@ public class SC_SetVariable : SequencerCommandBase
                 }
             }
         }
+
+        if (count > 30)
+            Debug.LogError("Stopped Forever Loop or 30 + variable parse in SC_SetVariable.cs, make sure to fix this !");
     
         return text;
     }

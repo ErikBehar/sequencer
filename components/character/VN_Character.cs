@@ -10,6 +10,9 @@ public class VN_Character : VN_CharBase
 
     public override string[] getAttireNames()
     {
+        if (attires == null || attires.Length == 0)
+            return null;
+
         string[] names = new string[attires.Length];
         for (int i = 0; i < attires.Length; i++)
         {
@@ -21,6 +24,9 @@ public class VN_Character : VN_CharBase
 
     public override string[] getExpressionNames()
     {
+        if (expressions == null || expressions.Length == 0)
+            return null;
+
         string[] names = new string[expressions.Length];
         for (int i = 0; i < expressions.Length; i++)
         {

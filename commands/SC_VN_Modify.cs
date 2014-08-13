@@ -49,9 +49,12 @@ public class SC_VN_Modify : SequencerCommandBase
             GameObject target = sequencerData.getTargetModel(targetName).target;
             VN_CharBase charcomp = target.GetComponent<VN_CharBase>();
 
-            if (charcomp.getAttireNames().Length > 0)
+            string[] attireNames = charcomp.getAttireNames();
+            string[] expressionNames = charcomp.getExpressionNames();
+
+            if (attireNames != null && attireNames.Length > 0)
                 prevAttireName = charcomp.getCurrentAttireName();
-            if (charcomp.getExpressionNames().Length > 0)
+            if (expressionNames != null && expressionNames.Length > 0)
                 prevExpressionName = charcomp.getCurrentExpressionName();
 
             charcomp.setAttire(attireName);
@@ -98,12 +101,12 @@ public class SC_VN_Modify : SequencerCommandBase
             {
                 string[] attires = charcomp.getAttireNames();
                 GUILayout.Label("attire:");
-                if (attires.Length > 0)
+                if (attires != null && attires.Length > 0)
                     attireName = attires [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(attires, attireName), attires, GUILayout.Width(100))];
     
                 string[] expressions = charcomp.getExpressionNames();
                 GUILayout.Label("expression:");
-                if (expressions.Length > 0)
+                if (expressions != null && expressions.Length > 0)
                     expressionName = expressions [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(expressions, expressionName), expressions, GUILayout.Width(100))];
             }
         }

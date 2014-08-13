@@ -77,8 +77,10 @@ public class SequencerData : MonoBehaviour
             if (targets [i].nickname == name)
                 return targets [i];
         }
-        
-        return targets [0];// this a good idea?
+        if (targets.Count == 0)
+            return null;
+
+        return targets [0];// is this a good idea?
     }
     
     public SequencerSectionModel getSectionModel(string name)

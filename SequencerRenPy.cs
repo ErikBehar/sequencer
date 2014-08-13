@@ -12,15 +12,19 @@ public class SequencerRenPy
     Dictionary<SC_VN_Choice, int> choiceToCurrentResolvedIndex = new Dictionary<SC_VN_Choice, int>();
     List<int> choiceEndLineList = new List<int>();
 
+    bool allowCharacterStubCreation = false;
+
     //this is for snippets, may not have a scene target, so append to current selected scene!
-    public void renpyToSequencer(string text, SequencerData sequencerData, int lastSelectedSection)
+    public void renpyToSequencer(string text, SequencerData sequencerData, int lastSelectedSection, bool createCharacterStubs)
     {
         currentSection = sequencerData.sections[ lastSelectedSection ];
-        renpyToSequencer(text, sequencerData);
+        renpyToSequencer(text, sequencerData, createCharacterStubs);
     }
 
-    public void renpyToSequencer(string text, SequencerData sequencerData)
+    public void renpyToSequencer(string text, SequencerData sequencerData, bool createCharacterStubs)
     {
+        allowCharacterStubCreation = createCharacterStubs;
+
         string[] splitFile = text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         
         bool commandWasValid = true;
@@ -54,8 +58,7 @@ public class SequencerRenPy
                     if (splitString [1] == " " || splitString.Length < 1)
                         break;
 
-                    targetModel = checkTargetExistsOrCreate(splitString [1], sequencerData);                    
-                    targetModel.type = SequencerTargetTypes.character; 
+                    targetModel = checkTargetExistsOrCreate(splitString [1], sequencerData, SequencerTargetTypes.character);
     
 //                    TODO: use the transition type
 //                    string transitionType;
@@ -68,7 +71,7 @@ public class SequencerRenPy
                     show.useFrom = false;
                     modify.targetName = show.lastSelectedWho = targetModel.nickname;
 
-                    show.lastSelectedTo = checkTargetExistsOrCreate("centerPos", sequencerData).nickname;
+                    show.lastSelectedTo = checkTargetExistsOrCreate("centerPos", sequencerData, SequencerTargetTypes.positional).nickname;
 
                     modify.expressionName = splitString [2];
                     break;
@@ -81,7 +84,7 @@ public class SequencerRenPy
                     if (splitString [1] == " " || splitString [1].Length < 1)
                         break;
 
-                    targetModel = checkTargetExistsOrCreate(splitString [1], sequencerData);
+                    targetModel = checkTargetExistsOrCreate(splitString [1], sequencerData, SequencerTargetTypes.positional);
                     hide.lastSelectedWho = targetModel.nickname;
                     hide.useTo = false; 
                     break;
@@ -203,8 +206,7 @@ public class SequencerRenPy
                     if (splitString [1] == " " || splitString [1].Length < 1)
                         break;
 
-                    targetModel = checkTargetExistsOrCreate(splitString [1], sequencerData);
-                    targetModel.type = SequencerTargetTypes.character;
+                    targetModel = checkTargetExistsOrCreate(splitString [1], sequencerData, SequencerTargetTypes.character);
                     show.lastSelectedWho = modify.targetName = targetModel.nickname;
                             
                     List<string> parts = new List<string>();
@@ -268,7 +270,7 @@ public class SequencerRenPy
                             positionTargetName = "centerPos";
                     }
 
-                    show.lastSelectedTo = checkTargetExistsOrCreate(positionTargetName, sequencerData).nickname;
+                    show.lastSelectedTo = checkTargetExistsOrCreate(positionTargetName, sequencerData, SequencerTargetTypes.positional).nickname;
                     modify.attireName = attire;
                     modify.expressionName = expression;
                     break;   
@@ -302,6 +304,13 @@ public class SequencerRenPy
                             initCommandAndAddToSection(currentSection, input, sequencerData);
                             
                             input.variableName = splitString [1];
+
+                            //create variable in sequencer ? this is not always needed since we have runtime variables !
+//                            if( Array.IndexOf( sequencerData.getNamesOfVariables(), input.variableName) == -1 )
+//                            {
+//                                sequencerData.variables.Add( new SequencerVariableModel( input.variableName, "default"));
+//                            }
+
                             break;
                         }
 
@@ -381,8 +390,7 @@ public class SequencerRenPy
                         SC_VN_Dialog dialogNar = ScriptableObject.CreateInstance(typeof(SC_VN_Dialog)) as SC_VN_Dialog;
                         initCommandAndAddToSection(currentSection, dialogNar, sequencerData);
 
-                        SequencerTargetModel narModel = checkTargetExistsOrCreate("narrator", sequencerData);
-                        narModel.type = SequencerTargetTypes.character;
+                        SequencerTargetModel narModel = checkTargetExistsOrCreate("narrator", sequencerData, SequencerTargetTypes.character);
                         dialogNar.speakerTargetName = narModel.nickname;
                         dialogNar.text = myString.Substring(1, myString.Length - 2);
                         commandWasValid = true;
@@ -395,8 +403,7 @@ public class SequencerRenPy
                         if (firstWord == " " || firstWord.Length < 1)
                             break;
 
-                        SequencerTargetModel diagModel = checkTargetExistsOrCreate(firstWord, sequencerData);
-                        diagModel.type = SequencerTargetTypes.character;
+                        SequencerTargetModel diagModel = checkTargetExistsOrCreate(firstWord, sequencerData, SequencerTargetTypes.character);
                         dialog.speakerTargetName = diagModel.nickname;
                         int startIndex = myString.IndexOf("\"") + 1;
                         int endIndex = myString.LastIndexOf("\"");
@@ -472,24 +479,34 @@ public class SequencerRenPy
         return sectionModel;
     }
     
-    SequencerTargetModel checkTargetExistsOrCreate(string name, SequencerData data)
+    SequencerTargetModel checkTargetExistsOrCreate(string name, SequencerData data, string type)
     {
         SequencerTargetModel targetModel;
-        if (data.targets.Count == 0)
+        targetModel = data.getTargetModel(name);
+
+        if (targetModel == null || targetModel.nickname != name)
         {
             targetModel = new SequencerTargetModel();
-            targetModel.nickname = name;
+            targetModel.nickname = name;  
+            targetModel.type = type;
             data.targets.Add(targetModel); 
-        } else
-        {
-            targetModel = data.getTargetModel(name);
-            if (targetModel.nickname != name)
+
+            GameObject newTargetObj = new GameObject(name);
+            newTargetObj.transform.parent = newTargetObj.transform.root;
+
+            targetModel.target = newTargetObj;
+
+            //character ( assume 2D character because we are comming in from Ren'py)
+            if (allowCharacterStubCreation && targetModel.type == SequencerTargetTypes.character )
             {
-                targetModel = new SequencerTargetModel();
-                targetModel.nickname = name;    
-                data.targets.Add(targetModel); 
+                newTargetObj.AddComponent<VN_Character>();
+            }
+            else if ( targetModel.type == SequencerTargetTypes.positional )
+            {
+                newTargetObj.name += "Pos";
             }
         }
+
         return targetModel;
     }
 
