@@ -82,8 +82,10 @@ public class SC_VN_Dialog : SequencerCommandBase
     { 
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
 
+
         GUILayout.Label("Speech Target:");
-        speakerTargetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, speakerTargetName), nickChars, GUILayout.Width(100))];
+        if (nickChars != null && nickChars.Length > 0)
+            speakerTargetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, speakerTargetName), nickChars, GUILayout.Width(100))];
     
         GUILayout.Label("Text:"); 
         text = EditorGUILayout.TextField(text, GUILayout.Width(300));

@@ -39,21 +39,25 @@ public class SequencePlayer : MonoBehaviour
             }           
         } 
 
-        if (currSectionIndex != -1)
+        if (currSectionIndex != -1 && sequencerData.sections [currCommandIndex].commandList.Count > 0)
         {
             play();
         } else
         {   
-            Debug.Log("Could not find starting section named: " + startingScene);
+            if (sequencerData.sections [currCommandIndex].commandList.Count == 0)
+                Debug.LogWarning("Current section has no commands !");
+            else
+                Debug.LogWarning("Could not find starting section named: " + startingScene);
         }
     }
 
     //Executes the current command we are on
     public void play()
-    {   
+    {
         Debug.Log("Play Section :" + "( " + currSectionIndex + ") " + 
             sequencerData.sections [currSectionIndex].name + " command: " + "(" + currCommandIndex +
             " ) " + sequencerData.sections [currSectionIndex].commandList [currCommandIndex].name);
+
         sequencerData.sections [currSectionIndex].commandList [currCommandIndex].execute(this);
     }
     

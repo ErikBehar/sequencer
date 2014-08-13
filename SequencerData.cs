@@ -41,7 +41,10 @@ public class SequencerData : MonoBehaviour
             if (targets [i].type == type)
                 names.Add(targets [i].nickname);   
         }
-        
+
+        if (names.Count == 0)
+            return null;
+
         return names.ToArray();
     }
 

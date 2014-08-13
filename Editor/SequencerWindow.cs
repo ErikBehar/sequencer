@@ -21,6 +21,8 @@ public class SequencerWindow : EditorWindow
     private static int lastSelectedSection = -1;
     private static string renameBoxString = "";
     private static int lastSelectedCommand = 0;
+    private int lastSelectedCommandFilter = 0;
+    private bool doTypeFilter = false;
     private GUIStyle guiBGAltColorA;
     private Texture2D littleTextureForBG_A;
     private GUIStyle guiBGAltColorB;
@@ -37,6 +39,8 @@ public class SequencerWindow : EditorWindow
     //TODO: figure out why I added this first temp variable, see if necesarry
     private string tempVarName = "variableX";
     private string tempVarValue = "42";
+
+    private SequencerTargetModel currentSetupTarget = null;
 
    #region Window Stuff
     void OnDisable()
@@ -103,7 +107,7 @@ public class SequencerWindow : EditorWindow
                 drawUiAreas();
                 //spacer 
                 GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
-                
+
                 if (lastSelectedArea == "targets")
                     drawDefineTargets();
                 else if (lastSelectedArea == "sections")
@@ -137,7 +141,7 @@ public class SequencerWindow : EditorWindow
     {
         EditorGUILayout.BeginHorizontal();
         {
-            GUILayout.Label("Drag & Drop object that holds data here:");
+            GUILayout.Label("Click Find if you have a data holder in the scene, otherwise Drag & Drop object that will hold the data here:");
             if (GUILayout.Button("Find"))
                 dataHolderGO = findDataHolderGo();
             dataHolderGO = EditorGUILayout.ObjectField(dataHolderGO, typeof(GameObject), true) as GameObject;       
@@ -187,52 +191,156 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.EndHorizontal();   
     }
 
+    private bool target_is3d = false;
+    private bool target_addAnims = false;
+    private bool target_addAttires = false;
+    private bool target_addExpressions = false;
+    private string target_name = "newCharacter_" + UnityEngine.Random.Range(0, int.MaxValue);
+
     private void drawDefineTargets()
     {
-        EditorGUILayout.BeginHorizontal();
+        if (currentSetupTarget != null)
         {
-            GUILayout.Label("Define Targets");
-            if (GUILayout.Button("New Target"))
-                doAddNewTarget();
-        }   
-        EditorGUILayout.EndHorizontal();  
-        
-        //spacer 
-        GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1)); 
-        
-        scrollPosTargets = EditorGUILayout.BeginScrollView(scrollPosTargets);
-        {
-            if (sequencerData != null && sequencerData.targets != null)
-            {
-                EditorGUILayout.BeginVertical();
-                {
-                    SequencerTargetModel[] tempTargets = new SequencerTargetModel[sequencerData.targets.Count]; 
-                    sequencerData.targets.CopyTo(tempTargets);
-                    List<SequencerTargetModel> targets = new List<SequencerTargetModel>(tempTargets);
+            target_is3d = GUILayout.Toggle(target_is3d, "3D character");
 
-                    for (int i = 0; i < targets.Count; i++)
+            if (target_is3d)
+            {
+                target_addAnims = GUILayout.Toggle(target_addAnims, "Add Selected Animations");
+            } else
+            {
+                target_addAttires = GUILayout.Toggle(target_addAttires, "Add Selected as Attires");
+                target_addExpressions = GUILayout.Toggle(target_addExpressions, "Add Selected as Expressions");
+            } 
+
+            GUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Name of the resulting GameObject:");
+                target_name = EditorGUILayout.TextField(target_name);
+            }
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Create GameObject or Add Sprites/Animations to existing"))
+            {
+                //check if go exists, and if it has a VN_CharBase component
+                //check to add which type 
+                //check & add selected stuff if matches type 
+
+                if (currentSetupTarget.target == null)
+                {
+                    currentSetupTarget.target = new GameObject(target_name);
+                    currentSetupTarget.target.transform.parent = currentSetupTarget.target.transform.root;
+                }
+
+                if (currentSetupTarget.target.GetComponent< VN_CharBase>() == null)
+                {
+                    if (target_is3d)
+                        currentSetupTarget.target.AddComponent<VN_3D_Character>();
+                    else 
+                        currentSetupTarget.target.AddComponent<VN_Character>();
+                }
+
+                if (target_is3d)
+                {
+                    currentSetupTarget.target.GetComponent<VN_3D_Character>();
+                    if (target_addAnims)
                     {
-                        if (i % 2 == 0)
-                            EditorGUILayout.BeginHorizontal(guiBGAltColorB);
-                        else
-                            EditorGUILayout.BeginHorizontal();
+                        Animation animComp = currentSetupTarget.target.AddComponent<Animation>();
+                        foreach (object obj in Selection.objects)
                         {
-                            GUILayout.Label("type:");
-                            targets [i].type = SequencerTargetTypes.targetTypes [EditorGUILayout.Popup(Array.IndexOf(SequencerTargetTypes.targetTypes, targets [i].type), SequencerTargetTypes.targetTypes)]; 
-                            GUILayout.Label("target:");
-                            targets [i].target = EditorGUILayout.ObjectField(targets [i].target, typeof(GameObject), true) as GameObject;
-                            GUILayout.Label("Nickname:");
-                            targets [i].nickname = GUILayout.TextField(targets [i].nickname);  
-                            if (GUILayout.Button("Delete this target"))
-                                doDeleteTarget(targets [i].target);
-                        }  
-                        EditorGUILayout.EndHorizontal(); 
+                            if (obj is AnimationClip)
+                            {
+                                animComp.AddClip(obj as AnimationClip, (obj as AnimationClip).name);
+                            }
+                        }
+                    }
+                } else
+                {
+                    VN_Character char2d = currentSetupTarget.target.GetComponent<VN_Character>();
+
+                    List<Sprite> spriteSelection = new List<Sprite>();
+                    foreach (object obj in Selection.objects)
+                    {
+                        if (obj is Sprite)
+                        {
+                            spriteSelection.Add(obj as Sprite);
+                        }
+                    }
+                    List<GameObject> instantiatedSprites = new List<GameObject>();
+                    if (spriteSelection != null)
+                    {
+                        foreach (Sprite aSprite in spriteSelection)
+                        {    
+                            GameObject newSprite = new GameObject(aSprite.name);
+                            SpriteRenderer spriteRen = newSprite.AddComponent<SpriteRenderer>();
+                            spriteRen.sprite = aSprite;
+                            newSprite.transform.parent = currentSetupTarget.target.transform;
+                            instantiatedSprites.Add(newSprite);
+                        }
+
+                        if (target_addAttires)
+                            char2d.attires = instantiatedSprites.ToArray();
+                        if (target_addExpressions)
+                            char2d.expressions = instantiatedSprites.ToArray();
                     }
                 }
-                EditorGUILayout.EndVertical(); 
+
+                currentSetupTarget = null;
             }
+
+        } else
+        {
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Define Targets");
+                if (GUILayout.Button("New Target"))
+                    doAddNewTarget();
+            }   
+            EditorGUILayout.EndHorizontal();  
+        
+            //spacer 
+            GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1)); 
+        
+            scrollPosTargets = EditorGUILayout.BeginScrollView(scrollPosTargets);
+            {
+                if (sequencerData != null && sequencerData.targets != null)
+                {
+                    EditorGUILayout.BeginVertical();
+                    {
+                        SequencerTargetModel[] tempTargets = new SequencerTargetModel[sequencerData.targets.Count]; 
+                        sequencerData.targets.CopyTo(tempTargets);
+                        List<SequencerTargetModel> targets = new List<SequencerTargetModel>(tempTargets);
+
+                        for (int i = 0; i < targets.Count; i++)
+                        {
+                            if (i % 2 == 0)
+                                EditorGUILayout.BeginHorizontal(guiBGAltColorB);
+                            else
+                                EditorGUILayout.BeginHorizontal();
+                            {
+                                GUILayout.Label("type:");
+                                targets [i].type = SequencerTargetTypes.targetTypes [EditorGUILayout.Popup(Array.IndexOf(SequencerTargetTypes.targetTypes, targets [i].type), SequencerTargetTypes.targetTypes)]; 
+                                GUILayout.Label("target:");
+                                targets [i].target = EditorGUILayout.ObjectField(targets [i].target, typeof(GameObject), true) as GameObject;
+                                GUILayout.Label("Nickname:");
+                                targets [i].nickname = GUILayout.TextField(targets [i].nickname);  
+                                if (targets [i].type == SequencerTargetTypes.character)
+                                {
+                                    if (GUILayout.Button("Setup Character"))
+                                    {
+                                        currentSetupTarget = targets [i];
+                                    }
+                                }
+                                if (GUILayout.Button("Delete this target"))
+                                    doDeleteTarget(targets [i].target);
+                            }  
+                            EditorGUILayout.EndHorizontal(); 
+                        }
+                    }
+                    EditorGUILayout.EndVertical(); 
+                }
+            }
+            EditorGUILayout.EndScrollView(); 
         }
-        EditorGUILayout.EndScrollView(); 
     }
 
     private void drawSections()
@@ -294,6 +402,15 @@ public class SequencerWindow : EditorWindow
         }  
         EditorGUILayout.EndHorizontal(); 
 
+        EditorGUILayout.BeginHorizontal();
+        {
+            GUILayout.Label("Filter by Command type:");
+            lastSelectedCommandFilter = EditorGUILayout.Popup(lastSelectedCommandFilter, SequencerCommandTypes.getAsStringArray(), GUILayout.Width(100));
+            
+            doTypeFilter = GUILayout.Toggle(doTypeFilter, "Toggle Filter");
+        }  
+        EditorGUILayout.EndHorizontal(); 
+
         //spacer 
         GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
         
@@ -345,6 +462,9 @@ public class SequencerWindow : EditorWindow
                 {
                     for (int i = pageStartIndex; i < pageEndIndex; i++)
                     {
+                        if (doTypeFilter && tempCommands [i].GetType() != SequencerCommandTypes.commandTypes [lastSelectedCommandFilter])
+                            continue;
+
                         if (i % 2 == 0)
                             EditorGUILayout.BeginHorizontal(guiBGAltColorA);
                         else
