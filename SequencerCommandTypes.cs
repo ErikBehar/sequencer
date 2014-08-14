@@ -5,6 +5,7 @@ using System;
 public class SequencerCommandTypes
 {
     //put your custom commands in here
+    //watch out if removing commands that have references 
     static public Type[] commandTypes = new Type[]
     {
         typeof(SC_Jump),

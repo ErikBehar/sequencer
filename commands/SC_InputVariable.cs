@@ -116,4 +116,20 @@ public class SC_InputVariable : SequencerCommandBase
         variableName = splitString [1];
         variableValue = splitString [2];
     }
+
+    override public bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        if (variableName == oldVariable)
+        {
+            variableName = newVariable;
+            
+            if (variableValue.Contains("[" + oldVariable + "]"))
+            {
+                variableValue.Replace("[" + oldVariable + "]", "[" + newVariable + "]");
+            }
+            
+            return true;
+        }
+        return false;
+    }
 }

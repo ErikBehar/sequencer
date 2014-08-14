@@ -205,4 +205,26 @@ public class SC_VN_Hide : SequencerCommandBase
         time = float.Parse(splitString [4]);
         waitForEndOfTween = bool.Parse(splitString [5]);
     }
+
+    override public bool updateTargetReference(string oldNickname, string newNickName)
+    {
+        bool didChange = false;
+
+        if (lastSelectedWho == oldNickname)
+        {
+            lastSelectedWho = newNickName;
+            didChange = true;
+        }
+
+        if (lastSelectedTo == oldNickname)
+        {
+            lastSelectedTo = newNickName;
+            didChange = true;
+        }
+
+        if (didChange)
+            return true;
+
+        return false;
+    }
 }

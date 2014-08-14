@@ -270,4 +270,42 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
             commandIndexList.Add(int.Parse(splitString [i + 2]));
         }
     }
+
+    override public bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        bool wasChanged = false;
+
+        for (int i=0; i < size; i++)
+        {
+            if (expressionList [i].Contains(("[" + oldVariable + "]")))
+            {
+                expressionList [i].Replace("[" + oldVariable + "]", "[" + newVariable + "]");
+                wasChanged = true;
+            }
+        }
+
+        if (wasChanged)
+            return true;
+      
+        return false;
+    }
+
+    override public bool updateSectionReference(string oldSection, string newSection)
+    {
+        bool wasChanged = false;
+        
+        for (int i = 0; i < sectionNameList.Count; i++)
+        {
+            if (sectionNameList [i] == oldSection)
+            {
+                sectionNameList [i] = newSection;
+                wasChanged = true;
+            }
+        }
+        
+        if (wasChanged)
+            return true;
+        
+        return false;
+    }
 }

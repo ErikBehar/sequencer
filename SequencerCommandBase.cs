@@ -202,4 +202,19 @@ public class SequencerCommandBase : ScriptableObject
     public virtual void initFromSequncerSerializedString(string[] splitString)
     {
     }
+
+    public virtual bool updateTargetReference(string oldNickname, string newNickName)
+    {
+        return false;
+    }
+
+    public virtual bool updateSectionReference(string oldSection, string newSection)
+    {
+        return false;
+    }
+
+    public virtual bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        return false;
+    }
 }

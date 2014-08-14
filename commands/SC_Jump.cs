@@ -168,4 +168,15 @@ public class SC_Jump : SequencerCommandBase
         targetSectionName = splitString [1];
         commandIndex = int.Parse(splitString [2]);
     }
+
+    override public bool updateSectionReference(string oldSection, string newSection)
+    {
+        if (targetSectionName == oldSection)
+        {
+            targetSectionName = newSection;
+            return true;
+        }
+
+        return false;
+    }
 }

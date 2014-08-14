@@ -131,4 +131,15 @@ public class SC_VN_Modify : SequencerCommandBase
         attireName = splitString [2];
         expressionName = splitString [3];
     }
+
+    override public bool updateTargetReference(string oldNickname, string newNickName)
+    {
+        if (targetName == oldNickname)
+        {
+            targetName = newNickName;
+            return true;
+        }
+        
+        return false;
+    }
 }

@@ -83,4 +83,14 @@ public class SC_VN_Flip : SequencerCommandBase
     {
         targetName = splitString [1];
     }
+
+    override public bool updateTargetReference(string oldNickname, string newNickName)
+    {
+        if (targetName == oldNickname)
+        {
+            targetName = newNickName;
+            return true;
+        }
+        return false;
+    }
 }

@@ -18,7 +18,7 @@ public class SC_Example : SequencerCommandBase
     // and hopefully the id stays same, and so we dont loose data, hopefully.
     public override string commandId{ get { return "example"; } }
 
-    //this type is used by the editor window for filtering, which is still in TODO     
+    //this type is used by the editor window for sub-filtering, which is still TODO     
     public override string commandType{ get { return "base"; } }
     
     //mostly unused now, but initChild can be used to init this command when its created in the editor window
@@ -76,4 +76,40 @@ public class SC_Example : SequencerCommandBase
         GUILayout.Label("Example:");
     }
     #endif
+
+    //turn your command to one or more similar lines of ren'py code, return "" or dont even include this function if there is no ren'py similar command
+    override public string toRenpy()
+    {
+        return "";
+    }
+
+    //turn your command to something we can save to a txt file to restore later, see examples in other commands 
+    override public string toSequncerSerializedString()
+    {
+        return "";
+    }
+
+    //use the split string you save out above to try to restore this command back
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+    }
+
+    //if this command is referencing a specific defined target, and that target changes name or is swapped, this will be called
+    //you must implement this to update the command accordingly if it needs it.
+    override public bool updateTargetReference(string oldNickname, string newNickName)
+    {
+        return false;
+    }
+
+    //if this commmand references a specific section, and that section changes, then you must implement this to swap out with the new section
+    override public bool updateSectionReference(string oldSection, string newSection)
+    {
+        return false;
+    }
+
+    //if this command uses defined variables, and that variable changes, then you must implement this to swap out with the new variable 
+    override public bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        return false;
+    }
 }

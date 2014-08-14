@@ -196,4 +196,20 @@ public class SC_SetVariable : SequencerCommandBase
         variableValue = splitString [2];
         typeIndex = int.Parse(splitString [3]);
     }
+
+    override public bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        if (variableName == oldVariable)
+        {
+            variableName = newVariable;
+
+            if (variableValue.Contains("[" + oldVariable + "]"))
+            {
+                variableValue.Replace("[" + oldVariable + "]", "[" + newVariable + "]");
+            }
+
+            return true;
+        }
+        return false;
+    }
 }

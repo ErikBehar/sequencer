@@ -46,6 +46,13 @@ public class SequencerWindow : EditorWindow
     private bool allowCharacterStubs = false;
     private string renpyExportFileName = "exportRenpy";
 
+    public static RenameTargetWindow renameTargetWindowLive;
+    public static RenameVariableWindow renameVariableWindowLive;
+
+    public static ReplaceTargetWindow replaceTargetWindowLive;
+    public static ReplaceSectionWindow replaceSectionWindowLive;
+    public static ReplaceVariableWindow replaceVariableWindowLive;
+
    #region Window Stuff
     void OnDisable()
     {
@@ -222,6 +229,7 @@ public class SequencerWindow : EditorWindow
 
     private void drawDefineTargets()
     {
+        //setup characters view
         if (currentSetupTarget != null)
         {
             target_is3d = GUILayout.Toggle(target_is3d, "3D character");
@@ -235,12 +243,15 @@ public class SequencerWindow : EditorWindow
                 target_addExpressions = GUILayout.Toggle(target_addExpressions, "Add Selected as Expressions");
             } 
 
-            GUILayout.BeginHorizontal();
+            if (currentSetupTarget.target == null)
             {
-                GUILayout.Label("Name of the resulting GameObject:");
-                target_name = EditorGUILayout.TextField(target_name);
+                GUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("Name of the resulting GameObject:");
+                    target_name = EditorGUILayout.TextField(target_name);
+                }
+                GUILayout.EndHorizontal();
             }
-            GUILayout.EndHorizontal();
 
             if (GUILayout.Button("Create GameObject or Add Sprites/Animations to existing"))
             {
@@ -310,7 +321,9 @@ public class SequencerWindow : EditorWindow
                 currentSetupTarget = null;
             }
 
-        } else
+        }
+        //normal define targets view
+        else
         {
             EditorGUILayout.BeginHorizontal();
             {
@@ -345,7 +358,7 @@ public class SequencerWindow : EditorWindow
                                 GUILayout.Label("target:");
                                 targets [i].target = EditorGUILayout.ObjectField(targets [i].target, typeof(GameObject), true) as GameObject;
                                 GUILayout.Label("Nickname:");
-                                targets [i].nickname = GUILayout.TextField(targets [i].nickname);  
+                                GUILayout.Label(targets [i].nickname);
                                 if (targets [i].type == SequencerTargetTypes.character)
                                 {
                                     if (GUILayout.Button("Setup Character"))
@@ -353,8 +366,12 @@ public class SequencerWindow : EditorWindow
                                         currentSetupTarget = targets [i];
                                     }
                                 }
-                                if (GUILayout.Button("Delete this target"))
-                                    doDeleteTarget(targets [i].target);
+                                if (GUILayout.Button("Rename"))
+                                {
+                                    doRenameTarget(targets [i]);
+                                }
+                                if (GUILayout.Button("Delete/Replace"))
+                                    doDeleteTarget(targets [i]);
                             }  
                             EditorGUILayout.EndHorizontal(); 
                         }
@@ -717,16 +734,22 @@ public class SequencerWindow : EditorWindow
                 {  
                     GUILayout.Label("Name of Variable:");
                     GUILayout.Label(variableNames [i]);
-                    
+
                     int varIndex = sequencerData.getIndexOfVariable(variableNames [i]);
                     if (varIndex > -1)
                     {
                         GUILayout.Label("Initial value:");
                         sequencerData.variables [varIndex].value = EditorGUILayout.TextField(sequencerData.variables [varIndex].value);
+                        if (GUILayout.Button("Rename this variable"))
+                        {
+                            doRenameVariable(variableNames [i]);
+                        }
+
                         if (GUILayout.Button("Delete this variable"))
                         {
-                            sequencerData.variables.RemoveAt(varIndex);
+                            doDeleteVariable(variableNames [i]);
                         }
+
                     }  
                 }
                 EditorGUILayout.EndHorizontal();        
@@ -802,48 +825,111 @@ public class SequencerWindow : EditorWindow
     }
     
     //note this deletes all found with same target ( in general we dont want duplicate targets anyway)
-    void doDeleteTarget(GameObject targetObject)
+    void doDeleteTarget(SequencerTargetModel targetModel)
     {
-        for (int i = sequencerData.targets.Count-1; i > -1; i--)
+        //check if target is being used, if it is, then pop replace dialog window
+        int numberOfRefrences = 0;
+
+        //basically we do a rename to the same name, to check if there are any references, 
+        //I should probably fix this so it doesnt actually rename, just test by adding a flag to that function ?
+        foreach (SequencerSectionModel sectionModel in sequencerData.sections)
         {
-            if (targetObject == sequencerData.targets [i].target)
+            foreach (SequencerCommandBase command in sectionModel.commandList)
             {
-                sequencerData.targets.Remove(sequencerData.targets [i]);
+                bool wasUpdated = command.updateTargetReference(targetModel.nickname, targetModel.nickname);
+                
+                if (wasUpdated)
+                    numberOfRefrences += 1;
             }
         }
+
+        if (numberOfRefrences > 0)
+        {
+            replaceTargetWindowLive = (ReplaceTargetWindow)EditorWindow.GetWindow(typeof(ReplaceTargetWindow));
+            replaceTargetWindowLive.toReplaceTargetModel = targetModel;
+            replaceTargetWindowLive.data = sequencerData;
+        } else
+            sequencerData.targets.Remove(targetModel);
     }
 
     //note this deletes all found with same name ( in general we dont want duplicates names anyway)
     void doDeleteSection(string sectionName)
     {
-        for (int i = sequencerData.sections.Count-1; i > -1; i--)
-        {
-            if (sectionName == sequencerData.sections [i].name)
-            {
-                SequencerSectionModel section = sequencerData.sections [i];
-                sequencerData.sections.Remove(sequencerData.sections [i]);
+        //check if there are any references first
+        int numberOfRefrences = 0;
 
-                foreach (SequencerCommandBase command in section.commandList)
+        foreach (SequencerSectionModel sectionModel in sequencerData.sections)
+        {
+            foreach (SequencerCommandBase command in sectionModel.commandList)
+            {
+                bool wasUpdated = command.updateSectionReference(sectionName, sectionName);
+                
+                if (wasUpdated)
+                    numberOfRefrences += 1;
+            }
+        }
+
+        //if there are references then show replace window
+        if (numberOfRefrences > 0)
+        {
+            doReplaceSection(sectionName);
+        }
+        //do delete since no references
+        else
+        {
+            for (int i = sequencerData.sections.Count-1; i > -1; i--)
+            {
+                if (sectionName == sequencerData.sections [i].name)
                 {
-                    DestroyImmediate(command);
+                    SequencerSectionModel section = sequencerData.sections [i];
+                    sequencerData.sections.Remove(sequencerData.sections [i]);
+
+                    foreach (SequencerCommandBase command in section.commandList)
+                    {
+                        DestroyImmediate(command);
+                    }
                 }
             }
         }
     }
 
-    //note this renames all with same name
-    void doRenameSection(SequencerSectionModel sectionModel, string newName)
+    void doRenameSection(SequencerSectionModel renameSectionModel, string newName)
     {
+        //cant be blank name
+        newName = newName.Trim();
+        if (newName == null || newName.Length == 0)
+        {
+            Debug.Log("Cant rename to blank!");
+            return;
+        }
+
+        //check for unique section name
         foreach (SequencerSectionModel model in sequencerData.sections)
         {
-            if (sectionModel != model && model.name == newName)
+            if (renameSectionModel != model && model.name == newName)
             {
                 Debug.LogWarning("Could not rename to " + newName + " because another section is already named that way !");
                 return;
             }
         }
 
-        sectionModel.rename(newName);
+        int numberOfRefrences = 0;
+        //make sure references are updated in all sections
+        foreach (SequencerSectionModel sectionModel in sequencerData.sections)
+        {
+            foreach (SequencerCommandBase command in sectionModel.commandList)
+            {
+                bool wasUpdated = command.updateSectionReference(renameSectionModel.name, newName);
+                
+                if (wasUpdated)
+                    numberOfRefrences += 1;
+            }
+        }
+
+        Debug.Log("Updated " + numberOfRefrences + " to this sections.");
+
+        //do rename
+        renameSectionModel.rename(newName);
     }
 
     void doAddCommandToSection(int sectionIndex, int typeIndex)
@@ -1020,6 +1106,60 @@ public class SequencerWindow : EditorWindow
         }
 
         Debug.LogWarning("Done, importing file");
+    }
+
+    void doRenameTarget(SequencerTargetModel toRenameTargetModel)
+    {
+        renameTargetWindowLive = (RenameTargetWindow)EditorWindow.GetWindow(typeof(RenameTargetWindow));
+        renameTargetWindowLive.toRenameTargetModel = toRenameTargetModel;
+        renameTargetWindowLive.data = sequencerData;
+    }
+
+    void doReplaceSection(string sectionToReplace)
+    {
+        replaceSectionWindowLive = (ReplaceSectionWindow)EditorWindow.GetWindow(typeof(ReplaceSectionWindow));
+        replaceSectionWindowLive.toReplaceSectionName = sectionToReplace;
+        replaceSectionWindowLive.data = sequencerData;
+    }
+
+    void doRenameVariable(string variableName)
+    {
+        renameVariableWindowLive = (RenameVariableWindow)EditorWindow.GetWindow(typeof(RenameVariableWindow));
+        renameVariableWindowLive.variableToRename = variableName;
+        renameVariableWindowLive.data = sequencerData;
+    }
+
+    void doDeleteVariable(string variableName)
+    {
+        //check if variable is not referenced
+        int numberOfRefrences = 0;
+        
+        //rename all command references
+        foreach (SequencerSectionModel sectionModel in sequencerData.sections)
+        {
+            foreach (SequencerCommandBase command in sectionModel.commandList)
+            {
+                bool wasUpdated = command.updateVariableReference(variableName, variableName);
+                
+                if (wasUpdated)
+                    numberOfRefrences += 1;
+            }
+        }
+
+        if (numberOfRefrences > 0)
+        {
+            doReplaceVariable(variableName);
+        } else
+        {
+            sequencerData.variables.RemoveAt(sequencerData.getIndexOfVariable(variableName));
+        }
+    }
+
+    void doReplaceVariable(string variableToReplace)
+    {
+        replaceVariableWindowLive = (ReplaceVariableWindow)EditorWindow.GetWindow(typeof(ReplaceVariableWindow));
+        replaceVariableWindowLive.variableToReplace = variableToReplace;
+        replaceVariableWindowLive.data = sequencerData;
     }
 
     //developer function to force fix commands 

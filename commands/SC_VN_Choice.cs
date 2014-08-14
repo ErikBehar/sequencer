@@ -246,4 +246,23 @@ public class SC_VN_Choice : SequencerCommandBase
             commandIndexList.Add(int.Parse(splitString [i + 2]));
         }
     }
+
+    override public bool updateSectionReference(string oldSection, string newSection)
+    {
+        bool wasChanged = false;
+
+        for (int i = 0; i < sectionNameList.Count; i++)
+        {
+            if (sectionNameList [i] == oldSection)
+            {
+                sectionNameList [i] = newSection;
+                wasChanged = true;
+            }
+        }
+
+        if (wasChanged)
+            return true;
+
+        return false;
+    }
 }

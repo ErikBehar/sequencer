@@ -171,4 +171,24 @@ public class SC_VN_Dialog : SequencerCommandBase
         volume = float.Parse(splitString [5]);
         bubbleXOffset = float.Parse(splitString [6]);
     }
+
+    override public bool updateTargetReference(string oldNickname, string newNickName)
+    {
+        if (speakerTargetName == oldNickname)
+        {
+            speakerTargetName = newNickName;
+            return true;
+        }
+        return false;
+    }
+
+    override public bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        if (text.Contains(("[" + oldVariable + "]")))
+        {
+            text = text.Replace("[" + oldVariable + "]", "[" + newVariable + "]");
+            return true;
+        }
+        return false;
+    }
 }
