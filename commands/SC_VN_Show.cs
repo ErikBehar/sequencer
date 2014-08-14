@@ -199,4 +199,27 @@ public class SC_VN_Show : SequencerCommandBase
         waitForEndOfTween = EditorGUILayout.Toggle(waitForEndOfTween);
     }
     #endif
+
+    override public string toRenpy()
+    {
+        //target output: show ami normal at center with dissolve
+        return "show " + lastSelectedWho + " normal at " + lastSelectedTo + " with dissolve\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + useFrom.ToString() + "╫"
+            + lastSelectedWho + "╫" + lastSelectedFrom + "╫" + lastSelectedTo + "╫"
+            + time.ToString() + "╫" + waitForEndOfTween.ToString() + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        useFrom = bool.Parse(splitString [1]);
+        lastSelectedWho = splitString [2];
+        lastSelectedFrom = splitString [3];
+        lastSelectedTo = splitString [4];
+        time = float.Parse(splitString [5]);
+        waitForEndOfTween = bool.Parse(splitString [6]);
+    }
 }

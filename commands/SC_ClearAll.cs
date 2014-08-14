@@ -92,7 +92,7 @@ public class SC_ClearAll : SequencerCommandBase
                     model.target.SetActive(false);
             }
 
-            //future: vars
+            //TODO: future: vars, flip
         }
         
         myPlayer.callBackFromCommand(); 
@@ -140,4 +140,9 @@ public class SC_ClearAll : SequencerCommandBase
     {
     }
 #endif
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫\n";
+    }
 }

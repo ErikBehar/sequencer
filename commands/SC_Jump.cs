@@ -148,4 +148,24 @@ public class SC_Jump : SequencerCommandBase
             }
         }
     }
+
+    override public string toRenpy()
+    {
+        //target output: jump credits
+        string sectionNameSans = sectionName;
+        if (targetSectionName [targetSectionName.Length - 1] == ':')
+            sectionNameSans = targetSectionName.Substring(0, sectionName.Length - 1);
+        return "jump " + sectionNameSans + "\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + targetSectionName + "╫" + commandIndex + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        targetSectionName = splitString [1];
+        commandIndex = int.Parse(splitString [2]);
+    }
 }

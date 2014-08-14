@@ -188,4 +188,18 @@ public class SequencerCommandBase : ScriptableObject
     public virtual void indexWasUpdated()
     {
     }
+
+    public virtual string toRenpy()
+    {
+        return "";
+    }
+
+    public virtual string toSequncerSerializedString()
+    {
+        return "";
+    }
+
+    public virtual void initFromSequncerSerializedString(string[] splitString)
+    {
+    }
 }

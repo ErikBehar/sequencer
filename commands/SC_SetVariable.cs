@@ -178,4 +178,22 @@ public class SC_SetVariable : SequencerCommandBase
     
         return text;
     }
+
+    override public string toRenpy()
+    {
+        //target output: $ bad_points += 1
+        return "$ " + variableName + " " + variableValue + "\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + variableName + "╫" + variableValue + "╫" + typeIndex + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        variableName = splitString [1];
+        variableValue = splitString [2];
+        typeIndex = int.Parse(splitString [3]);
+    }
 }

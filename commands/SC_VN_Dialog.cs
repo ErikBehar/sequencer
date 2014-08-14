@@ -20,6 +20,8 @@ public class SC_VN_Dialog : SequencerCommandBase
     public string speakerTargetName;
     public string text;
     public float time = 0f;
+
+    public string audioClipName;
     public AudioClip audioClip;
     public float volume = 1.0f;
 
@@ -35,6 +37,7 @@ public class SC_VN_Dialog : SequencerCommandBase
         newCmd.speakerTargetName = speakerTargetName;
         newCmd.text = text;
         newCmd.time = time;
+        newCmd.audioClipName = audioClipName;
         newCmd.audioClip = audioClip;
         newCmd.volume = volume;
         newCmd.bubbleXOffset = bubbleXOffset;
@@ -143,5 +146,29 @@ public class SC_VN_Dialog : SequencerCommandBase
             text += " ";
 
         return text;
+    }
+
+    override public string toRenpy()
+    {
+        //TODO: missing voice over sfx here
+        //target output: character "some text"
+        return speakerTargetName + " \"" + text + "\"\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {    
+        return GetType().Name + "╫" + speakerTargetName + "╫"
+            + text + "╫" + time.ToString() + "╫" + ((audioClip != null) ? audioClip.name : audioClipName) + "╫" 
+            + volume.ToString() + "╫" + bubbleXOffset.ToString() + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        speakerTargetName = splitString [1];
+        text = splitString [2];
+        time = float.Parse(splitString [3]);
+        audioClipName = splitString [4];
+        volume = float.Parse(splitString [5]);
+        bubbleXOffset = float.Parse(splitString [6]);
     }
 }

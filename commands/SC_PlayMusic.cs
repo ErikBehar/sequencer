@@ -95,4 +95,21 @@ public class SC_PlayMusic : SequencerCommandBase
         volume = EditorGUILayout.FloatField(volume);
     }
 #endif
+
+    override public string toRenpy()
+    {
+        //target output: play music "music/Smooth Ambience.ogg" fadein 1.0
+        return "play music \"" + audioClipName + "\" fadein 1.0\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + ((audioClip != null) ? audioClip.name : audioClipName) + "╫" + volume + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        audioClipName = splitString [1];
+        volume = float.Parse(splitString [2]);
+    }
 }

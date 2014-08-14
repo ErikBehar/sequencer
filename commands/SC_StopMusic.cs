@@ -75,5 +75,21 @@ public class SC_StopMusic : SequencerCommandBase
         GUILayout.Label("Fade Time:"); 
         fadeTime = EditorGUILayout.FloatField(fadeTime);
     }
-#endif
+    #endif
+
+    override public string toRenpy()
+    {
+        //target output: stop music fadeout 1.0
+        return "stop music fadeout 1.0\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + fadeTime + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        fadeTime = float.Parse(splitString [1]);
+    }
 }

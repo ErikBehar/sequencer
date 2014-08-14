@@ -112,4 +112,23 @@ public class SC_VN_Modify : SequencerCommandBase
         }
     }
 #endif
+
+    override public string toRenpy()
+    {
+        //target output: show ami normal at center with dissolve
+        return "show " + targetName + " " + attireName + " " + expressionName + " at center with dissolve\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + targetName + "╫"
+            + attireName + "╫" + expressionName + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        targetName = splitString [1];
+        attireName = splitString [2];
+        expressionName = splitString [3];
+    }
 }

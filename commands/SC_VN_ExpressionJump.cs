@@ -233,4 +233,41 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
         
         return text;
     }
+
+    override public string toRenpy()
+    {
+        //target output: if good_points >= bad_points:
+        //                      else:
+
+        string stringedExpression = "if " + expressionList [0] + ":\n";
+        for (int i=1; i < expressionList.Count; i++)
+            stringedExpression += "\t\telse if: " + expressionList [i] + ":\n";
+
+        return stringedExpression;
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        string choices = "";
+        for (int i=0; i < size; i++)
+        {
+            choices += expressionList [i] + "╫" + sectionNameList [i] + "╫" + commandIndexList [i] + "╫";
+        }
+        
+        return GetType().Name + "╫" + choices + "\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        expressionList = new List<string>();
+        sectionNameList = new List<string>();
+        commandIndexList = new List<int>();
+        
+        for (int i=1; i+2 < splitString.Length; i+=3)
+        {
+            expressionList.Add(splitString [i]);
+            sectionNameList.Add(splitString [i + 1]);
+            commandIndexList.Add(int.Parse(splitString [i + 2]));
+        }
+    }
 }

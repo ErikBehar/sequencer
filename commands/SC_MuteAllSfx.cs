@@ -59,4 +59,9 @@ public class SC_MuteAllSfx : SequencerCommandBase
     {
     }
 #endif
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫\n";
+    }
 }

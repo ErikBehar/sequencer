@@ -80,4 +80,20 @@ public class SC_Pause : SequencerCommandBase
         time = EditorGUILayout.FloatField(time);
     }
 #endif
+
+    override public string toRenpy()
+    {
+        //target output: $ renpy.pause(1)
+        return "$ renpy.pause(" + time.ToString() + ")\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + time + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        time = float.Parse(splitString [1]);
+    }
 }

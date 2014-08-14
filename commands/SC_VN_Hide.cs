@@ -183,4 +183,26 @@ public class SC_VN_Hide : SequencerCommandBase
         waitForEndOfTween = EditorGUILayout.Toggle(waitForEndOfTween);
     }
     #endif
+
+    override public string toRenpy()
+    {
+        //target output: hide terrence with dissolve
+        return "hide " + lastSelectedWho + " with dissolve\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + useTo.ToString() + "╫"
+            + lastSelectedWho + "╫" + lastSelectedTo + "╫" 
+            + time.ToString() + "╫" + waitForEndOfTween.ToString() + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        useTo = bool.Parse(splitString [1]);
+        lastSelectedWho = splitString [2];
+        lastSelectedTo = splitString [3];
+        time = float.Parse(splitString [4]);
+        waitForEndOfTween = bool.Parse(splitString [5]);
+    }
 }

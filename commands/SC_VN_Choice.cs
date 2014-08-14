@@ -209,4 +209,41 @@ public class SC_VN_Choice : SequencerCommandBase
             }
         }
     }
+
+    override public string toRenpy()
+    {
+        //TODO: temp code, need to have some time to implement the branching for choices =( 
+        //This is clearly not putting the lines that should go inbetween 
+        //target output:    menu:
+        //                      "I agree...":
+        string choiceString = "menu:\n";
+        foreach (string choice in optionTextList)
+            choiceString += "\t\t\"" + choice + "\":\n";
+        return  choiceString;
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        string choices = "";
+        for (int i=0; i < size; i++)
+        {
+            choices += sectionNameList [i] + "╫" + optionTextList [i] + "╫" + commandIndexList [i] + "╫";
+        }
+
+        return GetType().Name + "╫" + choices + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        sectionNameList = new List<string>();
+        optionTextList = new List<string>();
+        commandIndexList = new List<int>();
+
+        for (int i=1; i+2 < splitString.Length; i+=3)
+        {
+            sectionNameList.Add(splitString [i]);
+            optionTextList.Add(splitString [i + 1]);
+            commandIndexList.Add(int.Parse(splitString [i + 2]));
+        }
+    }
 }

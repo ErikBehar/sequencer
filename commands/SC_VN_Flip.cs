@@ -73,4 +73,14 @@ public class SC_VN_Flip : SequencerCommandBase
         targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
     }
 #endif
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + targetName + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        targetName = splitString [1];
+    }
 }

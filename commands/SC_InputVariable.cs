@@ -99,4 +99,21 @@ public class SC_InputVariable : SequencerCommandBase
         variableName = EditorGUILayout.TextField(variableName);
     }
     #endif
+
+    override public string toRenpy()
+    {
+        //target output: $ player_name = renpy.input("ENTER NAME:")
+        return "$ " + variableName + " = renpy.input(\"Enter Input:\")\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + variableName + "╫" + variableValue + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        variableName = splitString [1];
+        variableValue = splitString [2];
+    }
 }

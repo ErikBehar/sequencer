@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.IO;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,6 +15,7 @@ public class SequencerWindow : EditorWindow
     private Vector2 scrollPosTargets;
     private Vector2 scrollPosSections;
     private GameObject dataHolderValGoLastVal = null;
+    private TextAsset fileData;
     private static GameObject dataHolderGO = null;
     public static SequencerData sequencerData;
     private static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables", "statistics"
@@ -36,13 +38,13 @@ public class SequencerWindow : EditorWindow
     private int pagingSize = 100;
     private int page = 0;
 
-    //TODO: figure out why I added this first temp variable, see if necesarry
     private string tempVarName = "variableX";
     private string tempVarValue = "42";
 
     private SequencerTargetModel currentSetupTarget = null;
 
     private bool allowCharacterStubs = false;
+    private string renpyExportFileName = "exportRenpy";
 
    #region Window Stuff
     void OnDisable()
@@ -145,10 +147,27 @@ public class SequencerWindow : EditorWindow
     {
         EditorGUILayout.BeginHorizontal();
         {
+
             GUILayout.Label("Click Find if you have a data holder in the scene, otherwise Drag & Drop object that will hold the data here:");
             if (GUILayout.Button("Find"))
                 dataHolderGO = findDataHolderGo();
             dataHolderGO = EditorGUILayout.ObjectField(dataHolderGO, typeof(GameObject), true) as GameObject;       
+        
+            if (dataHolderGO != null)
+            {
+                if (GUILayout.Button("Export data to file"))
+                {
+                    doExportSequencerFile();
+                }
+            } else
+            {
+                fileData = EditorGUILayout.ObjectField(fileData, typeof(TextAsset), true) as TextAsset; 
+                if (GUILayout.Button("Import data into scene") && fileData != null)
+                {
+                    doImportSequencerFile();
+                }
+            }
+
         }   
         EditorGUILayout.EndHorizontal();    
     }
@@ -748,10 +767,25 @@ public class SequencerWindow : EditorWindow
                     doImportRenPy(importTextAreaText);
             }
 
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Export file name: ");
+                renpyExportFileName = EditorGUILayout.TextField(renpyExportFileName);
+                if (GUILayout.Button("(Alpha Feature: Use at own risk!) Export to Ren'py txt file"))
+                {
+                    doExportRenpy(renpyExportFileName);
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
         }
         EditorGUILayout.EndVertical();
+    }
 
-
+    private void doExportRenpy(string fileName)
+    {
+        SequencerRenPy renpyTranslator = new SequencerRenPy();
+        renpyTranslator.export(fileName, sequencerData, lastSelectedSection);
     }
 
     private void doImportRenPy(string text)
@@ -884,6 +918,108 @@ public class SequencerWindow : EditorWindow
             dataHolderValGoLastVal = dataHolderGO;
             testForData();
         }
+    }
+
+    void doExportSequencerFile()
+    {
+        string filePath = Application.dataPath + "/" + sequencerData.gameObject.name + ".txt";
+        StreamWriter fileStream = new StreamWriter(filePath);
+
+        fileStream.Write("TARGETS:\n");
+
+        foreach (SequencerTargetModel target in sequencerData.targets)
+        {
+            fileStream.Write(target.nickname + "╫" + target.target.name + "╫" + target.type + "\n");
+        }
+
+        fileStream.Write("VARIABLES:\n");
+        
+        foreach (SequencerVariableModel variable in sequencerData.variables)
+        {
+            fileStream.Write(variable.name + "╫" + variable.value + "\n");
+        }
+
+        fileStream.Write("SECTIONS:\n");
+        
+        foreach (SequencerSectionModel section in sequencerData.sections)
+        {
+            fileStream.Write("section:╫" + section.name + "╫" + section.commandList.Count.ToString() + "\n");
+            foreach (SequencerCommandBase command in section.commandList)
+            {
+                fileStream.Write(command.toSequncerSerializedString());
+            }
+        }
+
+        fileStream.Close();
+        
+        Debug.LogWarning("Done, file at: " + filePath);
+    }
+
+    void doImportSequencerFile()
+    {
+        string[] splitFile = fileData.text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+        GameObject newDataHolder = new GameObject("sequencerDataHolderObject");
+        SequencerData data = newDataHolder.AddComponent<SequencerData>();
+
+        string currentType = "";
+        SequencerSectionModel lastSectionModel = null;
+        for (int i=0; i < splitFile.Length; i++)
+        {
+            if (splitFile [i].Contains("TARGETS:"))
+            {
+                currentType = "targets";
+                continue;
+            } else if (splitFile [i].Contains("VARIABLES:"))
+            {
+                currentType = "variables";
+                continue;
+            } else if (splitFile [i].Contains("SECTIONS:"))
+            {
+                currentType = "sections";
+                continue;
+            }
+
+            string[] splitLine = splitFile [i].Split(new char[] {'╫'});
+             
+            if (currentType == "targets")
+            {
+                SequencerTargetModel targetModel = new SequencerTargetModel();
+                targetModel.nickname = splitLine [0];
+                targetModel.type = splitLine [2];
+
+                GameObject goalTarget = GameObject.Find(splitLine [1]);
+                if (goalTarget != null)
+                    targetModel.target = goalTarget;
+
+                data.targets.Add(targetModel);
+            } else if (currentType == "variables")
+            {
+                SequencerVariableModel variableModel = new SequencerVariableModel();
+                variableModel.name = splitLine [0];
+                variableModel.value = splitLine [1];
+
+                data.variables.Add(variableModel);
+            } else if (currentType == "sections")
+            {
+                if (splitLine [0] == "section:")
+                {
+                    lastSectionModel = new SequencerSectionModel();
+                    lastSectionModel.commandList = new List<SequencerCommandBase>();
+                    lastSectionModel.name = splitLine [1];
+                    data.sections.Add(lastSectionModel);
+                    continue;
+                } else
+                {
+                    SequencerCommandBase command = ScriptableObject.CreateInstance(splitLine [0]) as SequencerCommandBase;
+                    command.init(lastSectionModel.name, data);
+                    command.initFromSequncerSerializedString(splitLine);
+                    lastSectionModel.commandList.Add(command);
+                }
+            }
+        }
+
+        Debug.LogWarning("Done, importing file");
     }
 
     //developer function to force fix commands 

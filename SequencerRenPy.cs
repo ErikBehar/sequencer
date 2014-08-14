@@ -2,6 +2,7 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 public class SequencerRenPy 
 {
@@ -521,5 +522,61 @@ public class SequencerRenPy
         command.init(sectionModel.name, data);
         sectionModel.commandList.Add(command);
         command.updateAllIndex(); 
+    }
+
+    public void export( string fileName,SequencerData sequencerData, int lastSelectedSection)
+    {
+        currentSection = sequencerData.sections[ lastSelectedSection ];
+        string filePath = Application.dataPath + "/" + fileName + ".txt";
+        StreamWriter fileStream = new StreamWriter ( filePath);
+
+        //start the section 
+        string startScene = "label " + currentSection.name ;
+        if ( startScene[ startScene.Length-1] != ':')
+            startScene += ":";
+
+        fileStream.Write( startScene + "\n" );
+
+        int max = currentSection.commandList.Count;
+        for (int i = 0; i < max; i++)
+        {
+            fileStream.Write("\t");
+          
+            //if there is a clear followed by a show followed by a modify, its probably (altough not always) a scene command in ren'py
+            if ( currentSection.commandList[i] is SC_ClearAll &&
+                (i+2<max) && 
+                currentSection.commandList[i+1] is SC_VN_Show &&
+                currentSection.commandList[i+2] is SC_VN_Modify)
+            {
+                //target output: scene bg login with fade
+                SC_VN_Show showCommand = currentSection.commandList[i+1] as SC_VN_Show;
+                SC_VN_Modify modifyCommand = currentSection.commandList[i+2] as SC_VN_Modify;
+
+                //im taking for granted that the modify will be on the expression 
+                fileStream.Write( "scene " + showCommand.lastSelectedWho + " " + modifyCommand.expressionName + " with fade\n");
+
+                //skip those 3 commands 
+                i += 3 ;
+            }
+            // in case its a show followed by modify ( most likely these two commands are a split show in ren'py (altough not always)
+            else if ( currentSection.commandList[i] is SC_VN_Show &&
+                     (i+1<max) &&
+                     currentSection.commandList[i+1] is SC_VN_Modify)
+            {
+                //target output: show ami normal at center with dissolve
+                SC_VN_Show showCommand = currentSection.commandList[i] as SC_VN_Show;
+                SC_VN_Modify modifyCommand = currentSection.commandList[i+1] as SC_VN_Modify;
+
+                fileStream.Write( "show " + showCommand.lastSelectedWho + " " + modifyCommand.attireName + " "
+                                 + modifyCommand.expressionName + " at " + showCommand.lastSelectedTo
+                                 + " with dissolve\n");
+            }
+            else
+                 fileStream.Write( currentSection.commandList[i].toRenpy() );
+        }
+
+        fileStream.Close();
+
+        Debug.LogWarning("Done, file at: " + filePath);
     }
 }

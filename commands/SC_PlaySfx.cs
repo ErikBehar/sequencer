@@ -115,4 +115,21 @@ public class SC_PlaySfx : SequencerCommandBase
         waitForAudioClipEnd = EditorGUILayout.Toggle(waitForAudioClipEnd);
     }
     #endif
+
+    override public string toRenpy()
+    {
+        //target output: play audio "blah.ogg" 1.0
+        return "play audio \"" + audioClipName + "\"" + volume.ToString() + "\n";
+    }
+
+    override public string toSequncerSerializedString()
+    {
+        return GetType().Name + "╫" + ((audioClip != null) ? audioClip.name : audioClipName) + "╫" + volume + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        audioClipName = splitString [1];
+        volume = float.Parse(splitString [2]);
+    }
 }
