@@ -240,7 +240,7 @@ public class SequencerWindow : EditorWindow
             } else
             {
                 target_addAttires = GUILayout.Toggle(target_addAttires, "Add Selected as Attires");
-                target_addExpressions = GUILayout.Toggle(target_addExpressions, "Add Selected as Expressions");
+                target_addExpressions = GUILayout.Toggle(target_addExpressions, "Add Selected as Expressions ( backgrounds use this one)");
             } 
 
             if (currentSetupTarget.target == null)

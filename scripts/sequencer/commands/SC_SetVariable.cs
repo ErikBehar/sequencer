@@ -69,11 +69,11 @@ public class SC_SetVariable : SequencerCommandBase
 
             if (typeIndex == 1)
             {
-                myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalInt", parseTextForVars(variableValue));
+                myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalInt", parseTextForVars(variableValue));
                 result = myPlayer.lastEvalResultInt.ToString();
             } else if (typeIndex == 2)
             {
-                myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalFloat", parseTextForVars(variableValue));
+                myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalFloat", parseTextForVars(variableValue));
                 result = myPlayer.lastEvalResultFloat.ToString();
             }
 
@@ -134,11 +134,11 @@ public class SC_SetVariable : SequencerCommandBase
                 string result = variableValue;
                 if (typeIndex == 1)
                 {
-                    myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalInt", variableValue);
+                    myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalInt", variableValue);
                     result = myPlayer.lastEvalResultInt.ToString();
                 } else if (typeIndex == 2)
                 {
-                    myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalFloat", variableValue);
+                    myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalFloat", variableValue);
                     result = myPlayer.lastEvalResultFloat.ToString();
                 }
 

@@ -61,7 +61,7 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                 int foundIndex = -1;
                 for (int i = 0; i < expressionList.Count; i++)
                 {
-                    myPlayer.gameObject.GetComponent("EvalExpression").SendMessage("evalBool", parseTextForVars(expressionList [i]));
+                    myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalBool", parseTextForVars(expressionList [i]));
                     if (myPlayer.lastEvalResultBool)
                     {
                         foundIndex = i;
@@ -127,7 +127,12 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                         {
                             commandIndexList [i] = Mathf.Clamp(EditorGUILayout.IntField(commandIndexList [i]), 0, commandIndexMax - 1);
                         }
-                        targetCommandList [i] = sequencerData.getSectionModel(sectionNameList [i]).commandList [commandIndexList [i]];
+                           
+                        if (sequencerData.getSectionModel(sectionNameList [i]).commandList.Count == 0)
+                        {
+                            targetCommandList [i] = null;
+                        } else
+                            targetCommandList [i] = sequencerData.getSectionModel(sectionNameList [i]).commandList [commandIndexList [i]];
                     }
                     EditorGUILayout.EndHorizontal();  
                 }

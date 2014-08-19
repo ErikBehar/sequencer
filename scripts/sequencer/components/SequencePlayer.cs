@@ -6,6 +6,7 @@ using System;
 public class SequencePlayer : MonoBehaviour
 {
     public string startingScene;
+    public int startingCommandIndex = 0;
     public SequencerData sequencerData;
     private int currSectionIndex = -1;
     private int currCommandIndex = -1;
@@ -17,13 +18,22 @@ public class SequencePlayer : MonoBehaviour
     public DialogControllerBase dialogController;
     public ChoiceControllerBase choiceController;
     public InputControllerBase inputController;
-    public bool blockForward = false;
+
+    [HideInInspector]
+    public bool
+        blockForward = false;
 
     public Dictionary<string, string> runningTimeVariablesDictionary;
 
-    public bool lastEvalResultBool = false;
-    public int lastEvalResultInt = -1;
-    public float lastEvalResultFloat = 1.0f;
+    [HideInInspector]
+    public bool
+        lastEvalResultBool = false;
+    [HideInInspector]
+    public int
+        lastEvalResultInt = -1;
+    [HideInInspector]
+    public float
+        lastEvalResultFloat = 1.0f;
     
     void Start()
     {
@@ -34,17 +44,17 @@ public class SequencePlayer : MonoBehaviour
             if (sequencerData.sections [i].name == startingScene)
             {
                 currSectionIndex = i;
-                currCommandIndex = 0;
+                currCommandIndex = startingCommandIndex;
                 break;
             }           
         } 
 
-        if (currSectionIndex != -1 && sequencerData.sections [currCommandIndex].commandList.Count > 0)
+        if (currSectionIndex != -1 && sequencerData.sections [currSectionIndex].commandList.Count > 0)
         {
             play();
         } else
         {   
-            if (sequencerData.sections [currCommandIndex].commandList.Count == 0)
+            if (currSectionIndex != -1 && sequencerData.sections [currSectionIndex].commandList.Count == 0)
                 Debug.LogWarning("Current section has no commands !");
             else
                 Debug.LogWarning("Could not find starting section named: " + startingScene);
