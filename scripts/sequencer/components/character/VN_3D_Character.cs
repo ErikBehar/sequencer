@@ -11,6 +11,8 @@ public class VN_3D_Character : VN_CharBase
 
     private Vector3 initialRotation;
 
+    public bool playsBackwards = false;
+
     void Start()
     {
         initialRotation = transform.localRotation.eulerAngles;
@@ -82,7 +84,23 @@ public class VN_3D_Character : VN_CharBase
         if (animation [name] != null)
         {
             if (isRewind)
-                animation.Rewind(name);
+            {
+                if (playsBackwards)
+                {
+                    animation [name].speed = Mathf.Abs(animation [name].speed) * -1;
+
+                    if (animation [name].time > animation [name].length)
+                        animation [name].time = animation [name].length;
+                } else
+                {
+                    animation.Rewind(name);
+                }
+            } else
+            {
+                if (animation [name].time < 0)
+                    animation [name].time = 0;
+                animation [name].speed = Mathf.Abs(animation [name].speed);
+            }
             animation.CrossFade(name);
         } else
             Debug.LogWarning("Couldnt set anim: " + name + " cause possibly not active ?");
@@ -106,7 +124,7 @@ public class VN_3D_Character : VN_CharBase
         int i = 0;
         foreach (AnimationState state in animation)
         {
-            if (state.enabled && state.speed > 0 && animation.isPlaying)
+            if (state.enabled && Mathf.Abs(state.speed) > 0 && animation.isPlaying)
             {
                 return i;
             }
@@ -122,7 +140,7 @@ public class VN_3D_Character : VN_CharBase
         int i = 0;
         foreach (AnimationState state in animation)
         {
-            if (state.enabled && state.speed > 0 && animation.isPlaying)
+            if (state.enabled && Mathf.Abs(state.speed) > 0 && animation.isPlaying)
             {
                 if (state.clip == null)
                     return "none";

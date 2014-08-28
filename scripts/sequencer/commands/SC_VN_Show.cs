@@ -34,7 +34,7 @@ public class SC_VN_Show : SequencerCommandBase
     Tweener tween;
 
     override public void initChild()
-    {
+    { 
         
     }
 
@@ -133,11 +133,12 @@ public class SC_VN_Show : SequencerCommandBase
     
     override public void backward(SequencePlayer player)
     {
+        Transform target;
         if (tween != null && !tween.isComplete)
         {
             tween.Kill();
 
-            Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
+            target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
             Vector3 finalPos;
             if (useFrom)
             {
@@ -148,6 +149,9 @@ public class SC_VN_Show : SequencerCommandBase
             
             target.localPosition = finalPos;    
         }
+
+        target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
+        target.gameObject.SetActive(wasActiveAtStart);
     }
     
     public void onTweenComplete(TweenEvent evt)
@@ -189,8 +193,11 @@ public class SC_VN_Show : SequencerCommandBase
             lastSelectedFrom = "";
         }
 
-        GUILayout.Label("going to:"); 
-        lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
+        if (nickPos != null)
+        {
+            GUILayout.Label("going to:"); 
+            lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
+        }
 
         GUILayout.Label("transition Time:");
         time = EditorGUILayout.FloatField(time);
