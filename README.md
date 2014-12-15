@@ -26,3 +26,6 @@ Key Features:
  
  Importing a Ren'py novel tutorial:
  http://www.inversethought.com/Eriks/vn/compiled_annotated_zoom.mp4
+
+ Motion Book:
+ http://www.inversethought.com/Eriks/ebook/earth_web.html
