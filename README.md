@@ -15,7 +15,7 @@ Key Features:
 * You can have really long lists of commands
 * Can be used for 2D or 3D
 * you can use variables and small logic expressions
-* export / import
+* export & import
 * Easy to add your own commands or modify the ui, has
   uGUI and nGUI examples
   
