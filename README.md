@@ -19,13 +19,10 @@ Key Features:
 * Easy to add your own commands or modify the ui, has
   uGUI and nGUI examples
   
- Examples: 
- 
- Quick Visual novel with 2D & 3D characters running in a unity web player:
- http://www.inversethought.com/Eriks/df/index_no_df.html
- 
  Importing a Ren'py novel tutorial:
  http://www.inversethought.com/Eriks/vn/compiled_annotated_zoom.mp4
-
- Motion Book:
- http://www.inversethought.com/Eriks/ebook/earth_web.html
+ 
+ This project uses two other free projects:
+ DOTween : http://dotween.demigiant.com/  (used for moving characters and volumes)
+ TinyExe : https://www.codeproject.com/Articles/241830/a-Tiny-Expression-Evaluator  (used for evaluating expressions w/ variables) 
+ I have included them in the repo for quick bootstrapping, but there might be newer versions available at their respective creators sites.
