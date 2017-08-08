@@ -36,7 +36,7 @@ public class SC_MuteAllSfx : SequencerCommandBase
             undo();
         } else
         {
-            SoundManager.Get().stopAllSfx();
+            SoundManagerEB.Get().stopAllSfx();
         }
         
         myPlayer.callBackFromCommand(); 

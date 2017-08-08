@@ -31,7 +31,10 @@ public class UGuiDialogBubble : DialogControllerBase
     public GameObject rightBubbleEdge;
     public float rightBubbleOriginalDifference;
 
-    private bool shown = false;
+    bool shown = false;
+    //Text lastShownText;
+
+    public bool hideDialogAutomaticallyOnForward = true;
 
     void Awake()
     {
@@ -53,18 +56,21 @@ public class UGuiDialogBubble : DialogControllerBase
             rightPosVec = rightPos.position + new Vector3(xOffset, 0, 0);
             speechBubbleRight.transform.position = rightPosVec;
             speechBubbleRight.SetActive(true);
+            //lastShownText = speechTextLabelRight;
         } else if (charspeaker.transform.localPosition.x < -1)
         { 
             speechTextLabelLeft.text = text;
             leftPosVec = leftPos.position + new Vector3(xOffset, 0, 0);
             speechBubbleLeft.transform.position = leftPosVec;
             speechBubbleLeft.SetActive(true);
+            //lastShownText = speechTextLabelLeft;
         } else
         {
             narratorTextLabel.text = text;
             centerPosVec = centerPos.position + new Vector3(xOffset, 0, 0);
             narratorBubble.transform.position = centerPosVec;
             narratorBubble.SetActive(true);
+            //lastShownText = narratorTextLabel;
         }
     }
 
@@ -96,6 +102,15 @@ public class UGuiDialogBubble : DialogControllerBase
         return finalString;
     }
 
+    override public void onForward()
+    {
+        if (hideDialogAutomaticallyOnForward)
+        {
+            hideDialog();
+        }
+
+        //Do nothing ?
+    }
     override public void hideDialog()
     {
         shown = false;
@@ -118,5 +133,16 @@ public class UGuiDialogBubble : DialogControllerBase
                 speechBubbleRight.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleRight.gameObject.transform.position.x, speechBubbleRight.gameObject.transform.position.x + newdifference, .25f),
                                                                               rightPosVec.y, rightPosVec.z);
         }
+    }
+
+    override public bool dialogIsShown()
+    {
+        //fix this if typewritter effect for uGUI is implemented
+        return true;
+    }
+
+    override public void dialogForceComplete()
+    {
+        //add this if typewritter effect for uGUI is implemented
     }
 }

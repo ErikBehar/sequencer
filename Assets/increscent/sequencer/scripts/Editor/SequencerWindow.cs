@@ -1,50 +1,57 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.IO;
-
-#if UNITY_EDITOR
+using System.Text.RegularExpressions;
 using UnityEditor;
-#endif
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public class SequencerWindow : EditorWindow
 {
-    private static SequencerWindow thisWindowLive;
-    private Vector2 scrollPosTargets;
-    private Vector2 scrollPosSections;
-    private GameObject dataHolderValGoLastVal = null;
-    private TextAsset fileData;
-    private static GameObject dataHolderGO = null;
+    static SequencerWindow thisWindowLive;
+    Vector2 scrollPosTargets;
+    Vector2 scrollPosSections;
+    GameObject dataHolderValGoLastVal = null;
+    TextAsset fileData;
+    static GameObject dataHolderGO = null;
     public static SequencerData sequencerData;
-    private static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables", "statistics"
+    static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables", "statistics"
 
-    private static int lastSelectedSection = -1;
-    private static string renameBoxString = "";
-    private static int lastSelectedCommand = 0;
-    private int lastSelectedCommandFilter = 0;
-    private bool doTypeFilter = false;
-    private GUIStyle guiBGAltColorA;
-    private Texture2D littleTextureForBG_A;
-    private GUIStyle guiBGAltColorB;
-    private Texture2D littleTextureForBG_B;
-    private static int insertIndex = 0;
+    static int lastSelectedSection = -1;
+    static string renameBoxString = "";
+    static int lastSelectedCommand = 0;
+    int lastSelectedCommandFilter = 0;
+    bool doTypeFilter = false;
 
-    private TextAsset renpyTextAsset;
-    private string importTextAreaText = "";
+    GUIStyle guiBGDisabledColor;
+    Texture2D littleTextureForDisabledBG;
+    GUIStyle guiBGAltColorA;
+    Texture2D littleTextureForBG_A;
+    GUIStyle guiBGAltColorB;
+    Texture2D littleTextureForBG_B;
+    GUIStyle guiBGStubColor;
+    Texture2D littleTextureForStub;
+    GUIStyle guiBGDropColor;
+    Texture2D littleTextureForBG_Drop;
+    GUIStyle guiBGDragColor;
+    Texture2D littleTextureForBG_Drag;
+
+    static int insertIndex = 0;
+
+    TextAsset renpyTextAsset;
+    string importTextAreaText = "";
 
     public static bool paging = true;
-    private int pagingSize = 100;
-    private int page = 0;
+    int pagingSize = 100;
+    int page = 0;
 
-    private string tempVarName = "variableX";
-    private string tempVarValue = "42";
+    string tempVarName = "variableX";
+    string tempVarValue = "42";
 
-    private SequencerTargetModel currentSetupTarget = null;
+    SequencerTargetModel currentSetupTarget = null;
 
-    private bool allowCharacterStubs = false;
-    private string renpyExportFileName = "exportRenpy";
+    bool allowCharacterStubs = false;
+    string renpyExportFileName = "exportRenpy";
 
     public static RenameTargetWindow renameTargetWindowLive;
     public static RenameVariableWindow renameVariableWindowLive;
@@ -53,17 +60,37 @@ public class SequencerWindow : EditorWindow
     public static ReplaceSectionWindow replaceSectionWindowLive;
     public static ReplaceVariableWindow replaceVariableWindowLive;
 
+    public class CustomDragData
+    {
+        public int originalIndex;
+    }
+
+//    string dragDropIdentifier = "dragDrop_sequencerAction";
+
+    int drawDragPreview = -1;
+    int futureDragPreviewIndex = -1;
+
+    List<int> futureMultiDragIndexes = new List<int>();
+    List<int> multiDragIndexes = new List<int>();
+
+    Rect dropRect;
+    Rect lastCommandRect;
+
    #region Window Stuff
     void OnDisable()
     {
         DestroyImmediate(littleTextureForBG_A);
         DestroyImmediate(littleTextureForBG_B);
+        DestroyImmediate(littleTextureForDisabledBG);
+        DestroyImmediate(littleTextureForStub);
     }
 
     void OnDestroy()
     {
         DestroyImmediate(littleTextureForBG_A);
         DestroyImmediate(littleTextureForBG_B);
+        DestroyImmediate(littleTextureForDisabledBG);
+        DestroyImmediate(littleTextureForStub);
     }
 
     void OnEnable()
@@ -72,20 +99,58 @@ public class SequencerWindow : EditorWindow
         {
             testForData();
         }
-        
+
+        setColors();
+    }
+
+    void setColors()
+    {
+        if (sequencerData == null)
+            return;
+
+        littleTextureForStub = new Texture2D(1, 1);
+        littleTextureForStub.SetPixel(0, 0, sequencerData.stubColor );
+        littleTextureForStub.Apply();
+        littleTextureForStub.hideFlags = HideFlags.HideAndDontSave;
+        guiBGStubColor = new GUIStyle();
+        guiBGStubColor.normal.background = littleTextureForStub;
+
+        littleTextureForDisabledBG = new Texture2D(1, 1);
+        littleTextureForDisabledBG.SetPixel(0, 0, sequencerData.disabledColor);
+        littleTextureForDisabledBG.Apply();
+        littleTextureForDisabledBG.hideFlags = HideFlags.HideAndDontSave;
+        guiBGDisabledColor = new GUIStyle();
+        guiBGDisabledColor.normal.background = littleTextureForDisabledBG;
+
         littleTextureForBG_A = new Texture2D(1, 1);
-        littleTextureForBG_A.SetPixel(0, 0, new Color(0f, 1f, 1f, .15f));
+        littleTextureForBG_A.SetPixel(0, 0, sequencerData.normalRowColor );
         littleTextureForBG_A.Apply();
         littleTextureForBG_A.hideFlags = HideFlags.HideAndDontSave;
         guiBGAltColorA = new GUIStyle();
         guiBGAltColorA.normal.background = littleTextureForBG_A;
         
         littleTextureForBG_B = new Texture2D(1, 1);
-        littleTextureForBG_B.SetPixel(0, 0, new Color(1f, 0f, 1f, .15f));
+        littleTextureForBG_B.SetPixel(0, 0, sequencerData.normalAltRowColor );
         littleTextureForBG_B.Apply();
         littleTextureForBG_B.hideFlags = HideFlags.HideAndDontSave;
         guiBGAltColorB = new GUIStyle();
         guiBGAltColorB.normal.background = littleTextureForBG_B;
+
+        littleTextureForBG_Drop = new Texture2D(1, 1);
+        littleTextureForBG_Drop.SetPixel(0, 0, sequencerData.dropColor );
+        littleTextureForBG_Drop.Apply();
+        littleTextureForBG_Drop.hideFlags = HideFlags.HideAndDontSave;
+        guiBGDropColor = new GUIStyle();
+        guiBGDropColor.normal.background = littleTextureForBG_Drop;
+
+        littleTextureForBG_Drag = new Texture2D(1, 1);
+        littleTextureForBG_Drag.SetPixel(0, 0, sequencerData.dragColor );
+        littleTextureForBG_Drag.Apply();
+        littleTextureForBG_Drag.hideFlags = HideFlags.HideAndDontSave;
+        guiBGDragColor = new GUIStyle();
+        guiBGDragColor.normal.background = littleTextureForBG_Drag;
+
+        pagingSize = sequencerData.pagingSize;
 
         currentSetupTarget = null;
     }
@@ -131,35 +196,43 @@ public class SequencerWindow : EditorWindow
                     drawVariables();
                 else if (lastSelectedArea == "statistics")
                     drawStatistics();
+                else if (lastSelectedArea == "settings")
+                    drawSettings();
             }
         }
         EditorGUILayout.EndVertical();
 
     }
 
-    private void testForData()
+    void testForData()
     {
-        if (dataHolderGO != null)
+        if (dataHolderGO != null && sequencerData == null)
         {
             sequencerData = dataHolderGO.GetComponent<SequencerData>();
-            
+
             if (sequencerData == null)
             {
                 sequencerData = dataHolderGO.AddComponent<SequencerData>();
             }
+
+            if (sequencerData != null)
+            {
+                setColors();
+            }
         }
     }
 
-    private void drawDataHolder()
+    void drawDataHolder()
     {
         EditorGUILayout.BeginHorizontal();
         {
 
             GUILayout.Label("Click Find if you have a data holder in the scene, otherwise Drag & Drop object that will hold the data here:");
             if (GUILayout.Button("Find"))
-                dataHolderGO = findDataHolderGo();
-            dataHolderGO = EditorGUILayout.ObjectField(dataHolderGO, typeof(GameObject), true) as GameObject;       
-        
+                dataHolderGO = findDataHolderGo();                    
+            
+            dataHolderGO = EditorGUILayout.ObjectField(dataHolderGO, typeof(GameObject), true) as GameObject;   
+
             if (dataHolderGO != null)
             {
                 if (GUILayout.Button("Export data to file"))
@@ -175,11 +248,13 @@ public class SequencerWindow : EditorWindow
                 }
             }
 
+            if (GUILayout.Button("Force Dirty Scene"))
+                makeSceneDirty();
         }   
         EditorGUILayout.EndHorizontal();    
     }
 
-    private GameObject findDataHolderGo()
+    GameObject findDataHolderGo()
     {
         SequencerData data = SceneView.FindObjectOfType<SequencerData>();
         if (data != null)
@@ -187,7 +262,7 @@ public class SequencerWindow : EditorWindow
         return null;
     }
 
-    private void drawUiAreas()
+    void drawUiAreas()
     {
         EditorGUILayout.BeginHorizontal();
         {
@@ -217,17 +292,22 @@ public class SequencerWindow : EditorWindow
             {   
                 lastSelectedArea = "statistics";
             }
+
+            if (GUILayout.Button("Settings"))
+            {   
+                lastSelectedArea = "settings";
+            }
         }   
         EditorGUILayout.EndHorizontal();   
     }
 
-    private bool target_is3d = false;
-    private bool target_addAnims = false;
-    private bool target_addAttires = false;
-    private bool target_addExpressions = false;
-    private string target_name = "newCharacter_" + UnityEngine.Random.Range(0, int.MaxValue);
+    bool target_is3d = false;
+    bool target_addAnims = false;
+    bool target_addAttires = false;
+    bool target_addExpressions = false;
+	string target_name = "newCharacter_";
 
-    private void drawDefineTargets()
+    void drawDefineTargets()
     {
         //setup characters view
         if (currentSetupTarget != null)
@@ -278,16 +358,32 @@ public class SequencerWindow : EditorWindow
                     currentSetupTarget.target.GetComponent<VN_3D_Character>();
                     if (target_addAnims)
                     {
-                        Animation animComp = currentSetupTarget.target.AddComponent<Animation>();
+                        Animation animComp = currentSetupTarget.target.GetComponent<Animation>();
+                        if ( animComp == null)
+                            animComp = currentSetupTarget.target.AddComponent<Animation>();
+                        
                         foreach (object obj in Selection.objects)
                         {
                             if (obj is AnimationClip)
                             {
-                                animComp.AddClip(obj as AnimationClip, (obj as AnimationClip).name);
+                                AnimationClip clip = obj as AnimationClip;
+
+                                bool alreadyHasClip = false;
+                                for (int i = 0, max = animComp.GetClipCount(); i < max; i++)
+                                {
+                                    if (animComp.GetClip(clip.name) != null)
+                                    {
+                                        alreadyHasClip = true;
+                                    }
+                                }
+
+                                if ( !alreadyHasClip )
+                                    animComp.AddClip(obj as AnimationClip, (obj as AnimationClip).name);
                             }
                         }
                     }
-                } else
+                } 
+                else
                 {
                     VN_Character char2d = currentSetupTarget.target.GetComponent<VN_Character>();
 
@@ -383,7 +479,7 @@ public class SequencerWindow : EditorWindow
         }
     }
 
-    private void drawSections()
+    void drawSections()
     {
         EditorGUILayout.BeginHorizontal();
         {
@@ -406,9 +502,6 @@ public class SequencerWindow : EditorWindow
         }   
         EditorGUILayout.EndHorizontal();  
 
-        //spacer 
-        GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1)); 
-
         if (sequencerData != null && sequencerData.getSectionNames().Length > 0)
         { 
             EditorGUILayout.BeginHorizontal();
@@ -428,28 +521,38 @@ public class SequencerWindow : EditorWindow
             EditorGUILayout.EndHorizontal(); 
         }  
 
-        EditorGUILayout.BeginHorizontal();
+        //spacer 
+        GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1)); 
+
+        if (lastSelectedSection > -1 && lastSelectedSection < sequencerData.sections.Count && sequencerData.sections [lastSelectedSection] != null)
         {
-            GUILayout.Label("Available Commands:");
-            lastSelectedCommand = EditorGUILayout.Popup(lastSelectedCommand, SequencerCommandTypes.getAsStringArray(), GUILayout.Width(100));
+            if ( lastSelectedSection > -1)
+            {
+                EditorGUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("Available Commands:");
+                    lastSelectedCommand = EditorGUILayout.Popup(lastSelectedCommand, SequencerCommandTypes.getAsStringArray(), GUILayout.Width(100));
 
-            if (GUILayout.Button("Add Command"))
-                doAddCommandToSection(lastSelectedSection, lastSelectedCommand);
+                    if (GUILayout.Button("Add Command"))
+                        doAddCommandToSection(lastSelectedSection, lastSelectedCommand);
 
-            insertIndex = EditorGUILayout.IntField(insertIndex);
-            if (GUILayout.Button("Add Command At"))
-                doAddCommandToSectionAt(lastSelectedSection, lastSelectedCommand, insertIndex);
-        }  
-        EditorGUILayout.EndHorizontal(); 
+                    insertIndex = EditorGUILayout.IntField(insertIndex);
+                    if (GUILayout.Button("Add Command At"))
+                        doAddCommandToSectionAt(lastSelectedSection, lastSelectedCommand, insertIndex);
+                }  
+                EditorGUILayout.EndHorizontal(); 
 
-        EditorGUILayout.BeginHorizontal();
-        {
-            GUILayout.Label("Filter by Command type:");
-            lastSelectedCommandFilter = EditorGUILayout.Popup(lastSelectedCommandFilter, SequencerCommandTypes.getAsStringArray(), GUILayout.Width(100));
-            
-            doTypeFilter = GUILayout.Toggle(doTypeFilter, "Toggle Filter");
-        }  
-        EditorGUILayout.EndHorizontal(); 
+                EditorGUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("Filter by Command type:");
+                    lastSelectedCommandFilter = EditorGUILayout.Popup(lastSelectedCommandFilter, SequencerCommandTypes.getAsStringArray(), GUILayout.Width(100));
+                
+                    doTypeFilter = GUILayout.Toggle(doTypeFilter, "Toggle Filter");
+                }  
+                EditorGUILayout.EndHorizontal(); 
+
+            }
+        }
 
         //spacer 
         GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
@@ -471,7 +574,7 @@ public class SequencerWindow : EditorWindow
                 {
                     if (tempCommands.Length > pagingSize)
                     {
-                        totalPages = Mathf.FloorToInt((float)tempCommands.Length / (float)pagingSize);
+                        totalPages = Mathf.CeilToInt((float)tempCommands.Length / (float)pagingSize);
                     }
                     
                     if (totalPages > 1)
@@ -489,32 +592,74 @@ public class SequencerWindow : EditorWindow
                             if (GUILayout.Button("< previous page"))
                                 page = Mathf.Max(0, page - 1);                                           
                             
-                            GUILayout.Label(" Page: " + page + " out of " + totalPages);
+                            GUILayout.Label(" Page: " + (page+1) + " / " + totalPages);
                             
                             if (GUILayout.Button(" > next page"))
-                                page = Mathf.Min(totalPages, page + 1);
+                                page = Mathf.Min(totalPages-1, page + 1);
                         }
                         EditorGUILayout.EndHorizontal();
                     }
                 }
 
+                //Rect commandsArea = 
                 EditorGUILayout.BeginVertical();
                 {
+                    if (Event.current.type == EventType.layout)
+                        applyLayoutChanges();
+
                     for (int i = pageStartIndex; i < pageEndIndex; i++)
-                    {
-                        if (doTypeFilter && tempCommands [i].GetType() != SequencerCommandTypes.commandTypes [lastSelectedCommandFilter])
+                    {                        
+                        if (doTypeFilter && tempCommands[i].GetType() != SequencerCommandTypes.commandTypes[lastSelectedCommandFilter])
                             continue;
 
-                        if (i % 2 == 0)
-                            EditorGUILayout.BeginHorizontal(guiBGAltColorA);
+                        if (multiDragIndexes.Count > 0 && multiDragIndexes.Contains(i)) 
+                            lastCommandRect = EditorGUILayout.BeginHorizontal(guiBGDragColor);
+                        else if ( draggedIndex == i)
+                            lastCommandRect = EditorGUILayout.BeginHorizontal(guiBGDragColor);
+                        else if (!tempCommands[i].isEnabled)
+                            lastCommandRect = EditorGUILayout.BeginHorizontal(guiBGDisabledColor);
+                        else if (tempCommands[i].commandId == "SC_Stub")
+                            lastCommandRect = EditorGUILayout.BeginHorizontal(guiBGStubColor);
+                        else if (i % 2 == 0)
+                            lastCommandRect = EditorGUILayout.BeginHorizontal(guiBGAltColorA);
                         else
-                            EditorGUILayout.BeginHorizontal();
-                        {
-                            tempCommands [i].drawFrontUi();
-                            tempCommands [i].drawCustomUi();
-                            tempCommands [i].drawBackUi();
-                        }
+                            lastCommandRect = EditorGUILayout.BeginHorizontal();
+
+                        tempCommands[i].drawFrontUi();
+                        if (multiDragIndexes.Contains(i))
+                            tempCommands[i].drawCustomUi();
+                        else
+                            tempCommands[i].drawMinimizedUi();
+                            
+                        tempCommands[i].drawBackUi();
+                        
                         EditorGUILayout.EndHorizontal();
+
+                        makeDraggable( lastCommandRect, i);
+
+                        //Draw drag drop preview below
+                        if (drawDragPreview == i && draggedIndex != -1 && i != draggedIndex ) 
+                        {
+                            int dropPreviewCount = 1;
+
+                            if (multiDragIndexes.Count > 0)
+                                dropPreviewCount = multiDragIndexes.Count;
+                            
+                            EditorGUILayout.BeginVertical();
+                            {
+                                for (int count = 0; count < dropPreviewCount; count++)
+                                {
+                                    dropRect = EditorGUILayout.BeginHorizontal(guiBGDropColor);
+                                    {
+                                        GUILayout.Box("Will be dropped here! (always dropped below selected)", GUILayout.ExpandWidth(true), GUILayout.Height(40));
+                                    }
+                                    EditorGUILayout.EndHorizontal();
+
+                                    makeDroppable(dropRect, i);
+                                }
+                            }
+                            EditorGUILayout.EndVertical();
+                        }
                     }
                 }   
                 EditorGUILayout.EndVertical(); 
@@ -524,14 +669,14 @@ public class SequencerWindow : EditorWindow
                     if (totalPages > 1)
                     {
                         EditorGUILayout.BeginHorizontal();
-                        {   
+                        {
                             if (GUILayout.Button("< previous page"))
                                 page = Mathf.Max(0, page - 1);                                           
-                        
-                            GUILayout.Label(" Page: " + page + " out of " + totalPages);
-                        
+
+                            GUILayout.Label(" Page: " + (page+1) + " / " + totalPages);
+
                             if (GUILayout.Button(" > next page"))
-                                page = Mathf.Min(totalPages, page + 1);
+                                page = Mathf.Min(totalPages-1, page + 1);
                         }
                         EditorGUILayout.EndHorizontal();
                     }
@@ -544,22 +689,56 @@ public class SequencerWindow : EditorWindow
         }
     }   
 
+    void applyLayoutChanges()
+    {
+        if (futureDragPreviewIndex != -1)
+        {
+            drawDragPreview = futureDragPreviewIndex;
+            futureDragPreviewIndex = -1;
+        }
+
+        multiDragIndexes = futureMultiDragIndexes;
+    }
+
+    void drawSettings()
+    {
+        EditorGUILayout.BeginVertical();
+        { 
+            sequencerData.disabledColor = EditorGUILayout.ColorField("Disabled Color", sequencerData.disabledColor);
+            sequencerData.stubColor = EditorGUILayout.ColorField("Stub Color", sequencerData.stubColor);
+            sequencerData.normalRowColor = EditorGUILayout.ColorField("Normal Row Color", sequencerData.normalRowColor);
+            sequencerData.normalAltRowColor = EditorGUILayout.ColorField("Alt Row Color", sequencerData.normalAltRowColor);
+            sequencerData.dragColor = EditorGUILayout.ColorField("Drag Drop Color", sequencerData.dragColor);
+            sequencerData.dropColor = EditorGUILayout.ColorField("Drag Drop Color", sequencerData.dropColor);
+
+            sequencerData.pagingSize = EditorGUILayout.IntField("Paging Size", sequencerData.pagingSize);
+
+            EditorGUILayout.Space();
+
+            if (GUILayout.Button("Apply"))
+            {
+                setColors();
+            }
+        }   
+        EditorGUILayout.EndVertical();  
+    }
+
     #region stats
-    private List<bool> sectionForStatistics = new List<bool>();
-    private int stat_choices = 0;
-    private int stat_speechBubbles = 0;
-    private int stat_words = 0;
-    private int stat_music = 0;
-    private int stat_sfx = 0;
-    private int stat_variables = 0;
-    private int stat_characters = 0;
+    List<bool> sectionForStatistics = new List<bool>();
+    int stat_choices = 0;
+    int stat_speechBubbles = 0;
+    int stat_words = 0;
+    int stat_music = 0;
+    int stat_sfx = 0;
+    int stat_variables = 0;
+    int stat_characters = 0;
 
-    private List<string> uniqueMusicList = new List<string>();
-    private List<string> uniqueAudioList = new List<string>();
-    private List<string> uniqueVariableList = new List<string>();
-    private List<string> uniqueCharactersList = new List<string>();
+    List<string> uniqueMusicList = new List<string>();
+    List<string> uniqueAudioList = new List<string>();
+    List<string> uniqueVariableList = new List<string>();
+    List<string> uniqueCharactersList = new List<string>();
 
-    private void drawStatistics()
+    void drawStatistics()
     {
         EditorGUILayout.BeginVertical();
         { 
@@ -608,7 +787,7 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.EndVertical();  
     }
 
-    private void generateStats()
+    void generateStats()
     {
         //reset
         stat_choices = 0;
@@ -642,7 +821,7 @@ public class SequencerWindow : EditorWindow
                     if (typeCommand == typeof(SC_PlayMusic))
                     {
                         string name = ((SC_PlayMusic)seqCommand).audioClipName;
-                        if (name == null || name.Length == 0 || name == SoundManager.nullSoundName)
+                        if (name == null || name.Length == 0 || name == SoundManagerEB.nullSoundName)
                             name = ((SC_PlayMusic)seqCommand).audioClip.name;
 
                         if (!uniqueMusicList.Contains(name))
@@ -654,7 +833,7 @@ public class SequencerWindow : EditorWindow
                     if (typeCommand == typeof(SC_PlaySfx))
                     {
                         string name = ((SC_PlaySfx)seqCommand).audioClipName;
-                        if (name == null || name.Length == 0 || name == SoundManager.nullSoundName)
+                        if (name == null || name.Length == 0 || name == SoundManagerEB.nullSoundName)
                             name = ((SC_PlaySfx)seqCommand).audioClip.name;
                         
                         if (!uniqueAudioList.Contains(name))
@@ -703,7 +882,7 @@ public class SequencerWindow : EditorWindow
     }
     #endregion
 
-    private void drawVariables()
+    void drawVariables()
     {
         EditorGUILayout.BeginVertical();
         {            
@@ -758,7 +937,7 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.EndVertical();  
     }
 
-    private void drawImport()
+    void drawImport()
     {
         EditorGUILayout.BeginVertical();
         {
@@ -805,13 +984,13 @@ public class SequencerWindow : EditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    private void doExportRenpy(string fileName)
+    void doExportRenpy(string fileName)
     {
         SequencerRenPy renpyTranslator = new SequencerRenPy();
         renpyTranslator.export(fileName, sequencerData, lastSelectedSection);
     }
 
-    private void doImportRenPy(string text)
+    void doImportRenPy(string text)
     {
         if (renpyTextAsset != null || text != null)
         {
@@ -822,6 +1001,8 @@ public class SequencerWindow : EditorWindow
                 renpyTranslator.renpyToSequencer(renpyTextAsset.text, sequencerData, allowCharacterStubs);
             Debug.LogWarning("Done!");
         }
+
+        makeSceneDirty();
     }
     
     //note this deletes all found with same target ( in general we dont want duplicate targets anyway)
@@ -850,6 +1031,8 @@ public class SequencerWindow : EditorWindow
             replaceTargetWindowLive.data = sequencerData;
         } else
             sequencerData.targets.Remove(targetModel);
+
+        makeSceneDirty();
     }
 
     //note this deletes all found with same name ( in general we dont want duplicates names anyway)
@@ -891,6 +1074,8 @@ public class SequencerWindow : EditorWindow
                 }
             }
         }
+
+        makeSceneDirty();
     }
 
     void doRenameSection(SequencerSectionModel renameSectionModel, string newName)
@@ -930,6 +1115,8 @@ public class SequencerWindow : EditorWindow
 
         //do rename
         renameSectionModel.rename(newName);
+
+        makeSceneDirty();
     }
 
     void doAddCommandToSection(int sectionIndex, int typeIndex)
@@ -947,6 +1134,8 @@ public class SequencerWindow : EditorWindow
         sequencerData.sections [sectionIndex].commandList.Add((SequencerCommandBase)temp);
 
         ((SequencerCommandBase)temp).updateAllIndex();
+
+        makeSceneDirty();
     }
     
     void doAddCommandToSectionAt(int sectionIndex, int typeIndex, int insertIndex)
@@ -964,6 +1153,8 @@ public class SequencerWindow : EditorWindow
         insertIndex = Mathf.Clamp(insertIndex, 0, sequencerData.sections [sectionIndex].commandList.Count);
 
         sequencerData.sections [sectionIndex].commandList.Insert(insertIndex, (SequencerCommandBase)temp);
+
+        makeSceneDirty();
     }
 
     void doAddNewTarget()
@@ -971,6 +1162,8 @@ public class SequencerWindow : EditorWindow
         SequencerTargetModel model = new SequencerTargetModel();
         model.nickname = "target_" + UnityEngine.Random.Range(0, int.MaxValue).ToString();
         sequencerData.targets.Add(model);
+
+        makeSceneDirty();
     }
 
     void doAddNewSection()
@@ -980,6 +1173,8 @@ public class SequencerWindow : EditorWindow
         model.commandList = new List<SequencerCommandBase>();
         sequencerData.sections.Add(model);
         lastSelectedSection = sequencerData.sections.Count - 1;
+
+        makeSceneDirty();
     }
 
     void doDuplicateSection(SequencerSectionModel model)
@@ -995,6 +1190,8 @@ public class SequencerWindow : EditorWindow
 
         sequencerData.sections.Add(newModel);
         lastSelectedSection = sequencerData.sections.Count - 1;
+
+        makeSceneDirty();
     }
 
     void Update()
@@ -1004,6 +1201,8 @@ public class SequencerWindow : EditorWindow
             dataHolderValGoLastVal = dataHolderGO;
             testForData();
         }
+
+        Repaint();
     }
 
     void doExportSequencerFile()
@@ -1106,6 +1305,8 @@ public class SequencerWindow : EditorWindow
         }
 
         Debug.LogWarning("Done, importing file");
+
+        makeSceneDirty();
     }
 
     void doRenameTarget(SequencerTargetModel toRenameTargetModel)
@@ -1113,6 +1314,8 @@ public class SequencerWindow : EditorWindow
         renameTargetWindowLive = (RenameTargetWindow)EditorWindow.GetWindow(typeof(RenameTargetWindow));
         renameTargetWindowLive.toRenameTargetModel = toRenameTargetModel;
         renameTargetWindowLive.data = sequencerData;
+
+        makeSceneDirty();
     }
 
     void doReplaceSection(string sectionToReplace)
@@ -1120,6 +1323,8 @@ public class SequencerWindow : EditorWindow
         replaceSectionWindowLive = (ReplaceSectionWindow)EditorWindow.GetWindow(typeof(ReplaceSectionWindow));
         replaceSectionWindowLive.toReplaceSectionName = sectionToReplace;
         replaceSectionWindowLive.data = sequencerData;
+
+        makeSceneDirty();
     }
 
     void doRenameVariable(string variableName)
@@ -1127,6 +1332,8 @@ public class SequencerWindow : EditorWindow
         renameVariableWindowLive = (RenameVariableWindow)EditorWindow.GetWindow(typeof(RenameVariableWindow));
         renameVariableWindowLive.variableToRename = variableName;
         renameVariableWindowLive.data = sequencerData;
+
+        makeSceneDirty();
     }
 
     void doDeleteVariable(string variableName)
@@ -1153,6 +1360,8 @@ public class SequencerWindow : EditorWindow
         {
             sequencerData.variables.RemoveAt(sequencerData.getIndexOfVariable(variableName));
         }
+
+        makeSceneDirty();
     }
 
     void doReplaceVariable(string variableToReplace)
@@ -1160,6 +1369,147 @@ public class SequencerWindow : EditorWindow
         replaceVariableWindowLive = (ReplaceVariableWindow)EditorWindow.GetWindow(typeof(ReplaceVariableWindow));
         replaceVariableWindowLive.variableToReplace = variableToReplace;
         replaceVariableWindowLive.data = sequencerData;
+
+        makeSceneDirty();
+    }
+
+    void makeSceneDirty()
+    {
+        EditorSceneManager.MarkSceneDirty(sequencerData.gameObject.scene);
+    }
+
+    int draggedIndex = -1;
+
+    void makeDroppable ( Rect dropArea, int targetIndex)
+    {       
+        currentEvent = Event.current;
+        currentEventType = currentEvent.type;
+
+        if (!dropArea.Contains(currentEvent.mousePosition))
+            return;
+        
+        if ( currentEventType == EventType.MouseUp)
+        {
+            if (currentEvent.shift)
+            {
+                //Debug.Log("multi select detect.");
+                if ( !futureMultiDragIndexes.Contains( draggedIndex))
+                    futureMultiDragIndexes.Add( draggedIndex);
+            }
+            else
+                futureMultiDragIndexes.Clear();
+            
+            if (draggedIndex != -1 && draggedIndex != targetIndex)
+                doDragDrop(draggedIndex, targetIndex);
+            
+            draggedIndex = -1;
+            currentEvent.Use();
+        }
+    }
+
+    Event currentEvent;
+    EventType currentEventType;
+
+    protected void makeDraggable(Rect dropArea, int targetIndex)
+    {
+        // Cache References:
+        currentEvent = Event.current;
+        currentEventType = currentEvent.type;
+
+        if (!dropArea.Contains(currentEvent.mousePosition))
+            return;
+
+        futureDragPreviewIndex = targetIndex;
+        
+        switch (currentEventType)
+        {
+            case EventType.MouseDown:
+                if (!currentEvent.shift)
+                    futureMultiDragIndexes.Clear();
+
+                draggedIndex = targetIndex;
+                currentEvent.Use();
+
+                //Debug.Log("Mouse Down: " + currentEvent.button);
+                break;
+            case EventType.Repaint:
+                if (draggedIndex != -1)
+                {
+                    if ( draggedIndex != targetIndex )
+                        EditorGUI.DrawRect(dropArea, sequencerData.dropColor);  
+                    else if (draggedIndex == targetIndex)
+                        EditorGUI.DrawRect(dropArea, sequencerData.dragColor);  
+                }
+                //Debug.Log("Repaint");
+                break;
+            case EventType.MouseUp:
+                //check for //shift key being pressed
+                if (currentEvent.shift)
+                {
+                    //Debug.Log("multi select detect.");
+                    if ( !futureMultiDragIndexes.Contains( draggedIndex))
+                        futureMultiDragIndexes.Add( draggedIndex);
+                }
+                else
+                    futureMultiDragIndexes.Clear();
+
+                //drag drop below 
+                if (draggedIndex != -1 && draggedIndex != targetIndex)
+                {
+                    doDragDrop( draggedIndex, targetIndex );
+                }
+
+                draggedIndex = -1;
+                currentEvent.Use();
+                break;
+//            default:
+//                Debug.Log ( "defaulted: "  + currentEventType.ToString());
+//                break;
+        }
+    }
+
+    void doDragDrop( int fromIndex, int toIndex)
+    {
+        if (futureMultiDragIndexes.Count > 0)
+        {
+            //order 
+            futureMultiDragIndexes.Sort();
+
+            //save instance id's since indexes are not "reliable"
+            int[] instanceIds = new int[futureMultiDragIndexes.Count];
+            for (int i = 0; i < futureMultiDragIndexes.Count; i++)
+            {
+                instanceIds[i] = sequencerData.sections[lastSelectedSection].commandList[futureMultiDragIndexes[i]].GetInstanceID();   
+            }
+
+            int nextIndex = toIndex;
+
+            for (int c = 0; c < futureMultiDragIndexes.Count; c++)
+            {
+                nextIndex = sequencerData.sections[lastSelectedSection].commandList[futureMultiDragIndexes[c]].changeIndex(nextIndex); 
+
+                //update remaining indexes after change
+                for (int d = c+1; d < futureMultiDragIndexes.Count; d++)
+                {
+                    //search through commmand list : capped at prev index +- size of futureMultiDragIndexes.count (optimization)
+                    for (int b = Math.Max(0, futureMultiDragIndexes[d] - futureMultiDragIndexes.Count); b < Math.Min( sequencerData.sections[lastSelectedSection].commandList.Count, futureMultiDragIndexes[d] + futureMultiDragIndexes.Count); b++)
+                    {
+                        if (sequencerData.sections[lastSelectedSection].commandList[b].GetInstanceID() == instanceIds[d])
+                        {
+                            futureMultiDragIndexes[d] = sequencerData.sections[lastSelectedSection].commandList[b].currIndex;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            futureMultiDragIndexes.Clear();
+        }
+        else
+        {
+            //Debug.Log("X-Recieved drop from original spot: " + draggedIndex + " to: " + startIndex);
+            sequencerData.sections[lastSelectedSection].commandList[fromIndex].changeIndex(toIndex);
+        }
     }
 
     //developer function to force fix commands 

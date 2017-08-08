@@ -70,7 +70,8 @@ public class SC_VN_Flip : SequencerCommandBase
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
         
         GUILayout.Label("modify who?:");
-        targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
+        if ( nickChars != null)
+            targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
     }
 #endif
 

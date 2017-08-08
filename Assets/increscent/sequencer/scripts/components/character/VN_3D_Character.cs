@@ -29,10 +29,14 @@ public class VN_3D_Character : VN_CharBase
 
     public override string[] getExpressionNames()
     {
-        int clipCount = animation.GetClipCount();
+        Animation anim = GetComponent<Animation>();
+        if (anim == null)
+            return null;
+
+        int clipCount = anim.GetClipCount();
         string[] names = new string[clipCount];
         int i = 0;
-        foreach (AnimationState state in animation)
+        foreach (AnimationState state in GetComponent<Animation>())
         {
             names [i] = state.name;
             i++;
@@ -79,11 +83,11 @@ public class VN_3D_Character : VN_CharBase
     
     public override void setExpression(string name, bool isRewind)
     {
-        if (animation [name] != null)
+        if (GetComponent<Animation>() [name] != null)
         {
             if (isRewind)
-                animation.Rewind(name);
-            animation.CrossFade(name);
+                GetComponent<Animation>().Rewind(name);
+            GetComponent<Animation>().CrossFade(name);
         } else
             Debug.LogWarning("Couldnt set anim: " + name + " cause possibly not active ?");
     }
@@ -104,9 +108,9 @@ public class VN_3D_Character : VN_CharBase
     public override int getCurrentExpression()
     {
         int i = 0;
-        foreach (AnimationState state in animation)
+        foreach (AnimationState state in GetComponent<Animation>())
         {
-            if (state.enabled && state.speed > 0 && animation.isPlaying)
+            if (state.enabled && state.speed > 0 && GetComponent<Animation>().isPlaying)
             {
                 return i;
             }
@@ -120,9 +124,9 @@ public class VN_3D_Character : VN_CharBase
     public override string getCurrentExpressionName()
     {
         int i = 0;
-        foreach (AnimationState state in animation)
+        foreach (AnimationState state in GetComponent<Animation>())
         {
-            if (state.enabled && state.speed > 0 && animation.isPlaying)
+            if (state.enabled && state.speed > 0 && GetComponent<Animation>().isPlaying)
             {
                 if (state.clip == null)
                     return "none";

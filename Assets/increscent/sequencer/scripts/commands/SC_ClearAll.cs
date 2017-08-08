@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
 
 #if UNITY_EDITOR
-using UnityEditor;
- #endif
-using System.Collections;
+    using UnityEditor;
+#endif
 using System.Collections.Generic;
 using System;
 
@@ -20,13 +19,15 @@ public class SC_ClearAll : SequencerCommandBase
 
     public override string commandType{ get { return "base"; } }
 
-    private string musicClipName = "";
-    private float musicClipVolume = 1;
-    private List<GameObject> targets;
-    private List<Vector3> positions;
-    private List<bool> visibilitys;
-    private List<int> attires;
-    private List<string> expressions;
+    string musicClipName = "";
+  //  float musicClipVolume = 1;
+    List<GameObject> targets;
+    List<Vector3> positions;
+    List<bool> visibilitys;
+    List<int> attires;
+    List<string> expressions;
+
+    public bool clearMusic = false;
 
     override public void initChild()
     {
@@ -35,6 +36,7 @@ public class SC_ClearAll : SequencerCommandBase
     override public SequencerCommandBase clone()
     {       
         SC_ClearAll newCmd = ScriptableObject.CreateInstance(typeof(SC_ClearAll)) as SC_ClearAll;
+        newCmd.clearMusic = clearMusic;
         return base.clone(newCmd);        
     }
 
@@ -56,11 +58,15 @@ public class SC_ClearAll : SequencerCommandBase
             //attempt save state:
             
             //music 
-            musicClipName = SoundManager.Get().getCurrentMusicClipName();
-            musicClipVolume = SoundManager.Get().getCurrentMusicClipVolume(); 
+            if (SoundManagerEB.Get() != null)
+            {
+                musicClipName = SoundManagerEB.Get().getCurrentMusicClipName();
+               // musicClipVolume = SoundManagerEB.Get().getCurrentMusicClipVolume(); 
 
-            SoundManager.Get().stopMusic();
-            
+                if ( clearMusic )
+                    SoundManagerEB.Get().pauseMusic();
+            }
+
             //characters (visible, pos, attire, expression)
             foreach (SequencerTargetModel model in myPlayer.sequencerData.targets)
             {
@@ -92,6 +98,9 @@ public class SC_ClearAll : SequencerCommandBase
                     model.target.SetActive(false);
             }
 
+            //clear dialogs
+            myPlayer.dialogController.hideDialog();
+
             //TODO: future: vars, flip
         }
         
@@ -101,8 +110,8 @@ public class SC_ClearAll : SequencerCommandBase
     override public void undo()
     {
         //music 
-        if (musicClipName != SoundManager.nullSoundName)
-            SoundManager.Get().playMusic(musicClipName, musicClipVolume);
+        if (clearMusic && SoundManagerEB.Get() != null && musicClipName != SoundManagerEB.nullSoundName)
+            SoundManagerEB.Get().unPauseMusic();
         
         //characters (visible, pos, attire, expression)
         int count = myPlayer.sequencerData.targets.Count;
@@ -122,7 +131,7 @@ public class SC_ClearAll : SequencerCommandBase
                 hasCharComp.setAttire(attires [i]);
                 hasCharComp.setExpression(expressions [i], true);
             }
-        } 
+        }
         
         //future: vars
     }
@@ -138,11 +147,17 @@ public class SC_ClearAll : SequencerCommandBase
 #if UNITY_EDITOR
     override public void drawCustomUi()
     {
+        clearMusic = GUILayout.Toggle(clearMusic, "Clear Music Also?");
     }
 #endif
 
     override public string toSequncerSerializedString()
     {
-        return GetType().Name + "╫\n";
+        return GetType().Name + "╫" + clearMusic.ToString() + "╫\n";
+    }
+
+    override public void initFromSequncerSerializedString(string[] splitString)
+    {
+        clearMusic = bool.Parse(splitString [1]);
     }
 }

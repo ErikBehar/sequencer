@@ -43,7 +43,8 @@ public class SC_Pause : SequencerCommandBase
             undo();
         } else
         {
-            player.StartCoroutine(waitABit());
+            if ( player != null)
+                player.StartCoroutine(waitABit());
         }
     }
 
@@ -74,6 +75,12 @@ public class SC_Pause : SequencerCommandBase
     }
 
 #if UNITY_EDITOR
+
+    override public void drawMinimizedUi()
+    {
+        GUILayout.Button( sequencerData.getIconTexture("pause"));
+    }
+
     override public void drawCustomUi()
     { 
         GUILayout.Label("Time to pause:");

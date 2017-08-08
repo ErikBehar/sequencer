@@ -88,7 +88,8 @@ public class SC_VN_Modify : SequencerCommandBase
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
         
         GUILayout.Label("modify who?:");
-        targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
+        if ( nickChars != null)
+            targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
 
         SequencerTargetModel model = sequencerData.getTargetModel(targetName);
         if (model != null)

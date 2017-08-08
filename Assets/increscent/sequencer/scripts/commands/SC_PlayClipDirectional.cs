@@ -74,7 +74,8 @@ public class SC_PlayClipDirectional : SequencerCommandBase
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
         
         GUILayout.Label("Play Clip Directional who?:");
-        targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
+        if (nickChars != null && nickChars.Length > 0)
+            targetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, targetName), nickChars, GUILayout.Width(100))];
 
         SequencerTargetModel model = sequencerData.getTargetModel(targetName);
         if (model != null)

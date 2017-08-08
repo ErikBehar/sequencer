@@ -43,11 +43,11 @@ public class SC_StopMusic : SequencerCommandBase
             undo();
         } else
         {
-            previousPlayingMusicClipName = SoundManager.Get().getCurrentMusicClipName();
-            previousFadeTime = SoundManager.Get().fadeTime;
-            previousVolume = SoundManager.Get().getCurrentMusicClipVolume();
-            SoundManager.Get().fadeTime = fadeTime;
-            SoundManager.Get().stopMusic();
+            previousPlayingMusicClipName = SoundManagerEB.Get().getCurrentMusicClipName();
+            previousFadeTime = SoundManagerEB.Get().fadeTime;
+            previousVolume = SoundManagerEB.Get().getCurrentMusicClipVolume();
+            SoundManagerEB.Get().fadeTime = fadeTime;
+            SoundManagerEB.Get().stopMusic();
         }
         
         myPlayer.callBackFromCommand(); 
@@ -55,9 +55,9 @@ public class SC_StopMusic : SequencerCommandBase
     
     override public void undo()
     {
-        SoundManager.Get().fadeTime = previousFadeTime;
-        SoundManager.Get().musicVolume = previousVolume;
-        SoundManager.Get().playMusic(previousPlayingMusicClipName, previousVolume);
+        SoundManagerEB.Get().fadeTime = previousFadeTime;
+        SoundManagerEB.Get().musicVolume = previousVolume;
+        SoundManagerEB.Get().playMusic(previousPlayingMusicClipName, previousVolume);
     }
 
     override public void forward(SequencePlayer player)

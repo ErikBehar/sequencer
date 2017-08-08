@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System;
 
@@ -7,11 +6,12 @@ public class SequencePlayer : MonoBehaviour
 {
     public bool usingNGUI = false;
     public string startingScene;
+    public bool autoStart = true;
     public int startingCommandIndex = 0;
     public SequencerData sequencerData;
-    private int currSectionIndex = -1;
-    private int currCommandIndex = -1;
-    private List<PlayerJumpModel> jumpsList = new List<PlayerJumpModel>();
+    int currSectionIndex = -1;
+    int currCommandIndex = -1;
+    List<PlayerJumpModel> jumpsList = new List<PlayerJumpModel>();
     [HideInInspector]
     public bool
         inRewindMode = false;
@@ -35,14 +35,45 @@ public class SequencePlayer : MonoBehaviour
     [HideInInspector]
     public float
         lastEvalResultFloat = 1.0f;
-    
+
+    public Action<string> onChangeScene = delegate{};
+
     void Start()
     {
         runningTimeVariablesDictionary = sequencerData.getVariablesAsDictionary();
 
+        if (autoStart)
+        {
+            for (int i = 0; i < sequencerData.sections.Count; i++)
+            {
+                if (sequencerData.sections[i].name == startingScene)
+                {
+                    currSectionIndex = i;
+                    currCommandIndex = startingCommandIndex;
+                    break;
+                }           
+            } 
+
+            if (currSectionIndex != -1 && sequencerData.sections[currSectionIndex].commandList.Count > 0)
+            {
+                onChangeScene(startingScene);
+                play();
+            }
+            else
+            {   
+                if (currSectionIndex != -1 && sequencerData.sections[currSectionIndex].commandList.Count == 0)
+                    Debug.LogWarning("Current section has no commands !");
+                else
+                    Debug.LogWarning("Could not find starting section named: " + startingScene);
+            }
+        }
+    }
+
+    public void startScene( string sceneName )
+    {
         for (int i = 0; i < sequencerData.sections.Count; i++)
         {
-            if (sequencerData.sections [i].name == startingScene)
+            if (sequencerData.sections[i].name == sceneName)
             {
                 currSectionIndex = i;
                 currCommandIndex = startingCommandIndex;
@@ -50,24 +81,40 @@ public class SequencePlayer : MonoBehaviour
             }           
         } 
 
-        if (currSectionIndex != -1 && sequencerData.sections [currSectionIndex].commandList.Count > 0)
+        if (currSectionIndex != -1 && sequencerData.sections[currSectionIndex].commandList.Count > 0)
         {
+            onChangeScene(sceneName);
             play();
-        } else
+        }
+        else
         {   
-            if (currSectionIndex != -1 && sequencerData.sections [currSectionIndex].commandList.Count == 0)
+            if (currSectionIndex != -1 && sequencerData.sections[currSectionIndex].commandList.Count == 0)
                 Debug.LogWarning("Current section has no commands !");
             else
-                Debug.LogWarning("Could not find starting section named: " + startingScene);
+                Debug.LogWarning("Could not find starting section named: " + sceneName);
         }
     }
 
-    //Executes the current command we are on
+    //Executes the current command we are on (unless its disabled then skip to next one )
     public void play()
     {
-        Debug.Log("Play Section :" + "( " + currSectionIndex + ") " + 
+        if ( !sequencerData.sections [currSectionIndex].commandList [currCommandIndex].isEnabled )
+        {
+            Debug.Log("!Skipped! (Was Disabled): Section :" + "( " + currSectionIndex + ") " + 
+                sequencerData.sections [currSectionIndex].name + " command: " + "(" + currCommandIndex +
+                " ) " + sequencerData.sections [currSectionIndex].commandList [currCommandIndex].name);
+            
+            if (inRewindMode)
+                backward();
+            else
+                forward();
+        }
+    
+        #if UNITY_EDITOR
+            Debug.Log("Play Section :" + "( " + currSectionIndex + ") " + 
             sequencerData.sections [currSectionIndex].name + " command: " + "(" + currCommandIndex +
             " ) " + sequencerData.sections [currSectionIndex].commandList [currCommandIndex].name);
+        #endif
 
         sequencerData.sections [currSectionIndex].commandList [currCommandIndex].execute(this);
     }
@@ -79,13 +126,17 @@ public class SequencePlayer : MonoBehaviour
 
         if (blockForward)
         {
-            blockForward = false;
-                
-        } else
+            blockForward = false;    
+        } 
+        else
         {
             if (currCommandIndex + 1 == sequencerData.sections [currSectionIndex].commandList.Count)
             {
+                //should still call this commands forward, even if its the last guy
+                sequencerData.sections [currSectionIndex].commandList [currCommandIndex].forward(this);
+
                 Debug.Log("END of Sequence! or reached end of Section with out a jump.");
+
             } else
             {
                 sequencerData.sections [currSectionIndex].commandList [currCommandIndex].forward(this);
@@ -129,11 +180,14 @@ public class SequencePlayer : MonoBehaviour
             currSectionIndex = jumpsList [lastJumpIndex].sectionJumpedFrom;
             currCommandIndex = jumpsList [lastJumpIndex].commandJumpedFrom;
             jumpsList.RemoveAt(lastJumpIndex);   
+            onChangeScene( sequencerData.getSectionNames()[jumpsList [lastJumpIndex].sectionJumpedTo]);
             play();
-        } else if (currCommandIndex - 1 == -1)
+        } 
+        else if (currCommandIndex - 1 == -1)
         {
             jumpToScene("null", -1); //these values dont matter since we are rewinding
-        } else
+        }
+        else
         {
             currCommandIndex -= 1;
             play();
@@ -167,6 +221,7 @@ public class SequencePlayer : MonoBehaviour
                 currCommandIndex = jumpsList [lastJumpIndex].commandJumpedFrom;
                 
                 jumpsList.RemoveAt(lastJumpIndex);
+                onChangeScene(nameToJumpTo);
                 play();
             } else
             {
@@ -174,13 +229,15 @@ public class SequencePlayer : MonoBehaviour
                 inRewindMode = false;
                 play();
             }
-        } else
+        } 
+        else
         {
             int indexOfToSection = Array.IndexOf(sequencerData.getSectionNames(), nameToJumpTo);
             jumpsList.Add(new PlayerJumpModel(currSectionIndex, indexOfToSection, currCommandIndex, commandIndex));
             
             currSectionIndex = indexOfToSection;
             currCommandIndex = commandIndex;
+            onChangeScene(nameToJumpTo);
             play();
         }
     }
@@ -207,4 +264,9 @@ public class SequencePlayer : MonoBehaviour
     {
         lastEvalResultFloat = result;
     }   
+
+    public string getCurrentSceneName()
+    {
+       return sequencerData.sections[currSectionIndex].name;
+    }
 }

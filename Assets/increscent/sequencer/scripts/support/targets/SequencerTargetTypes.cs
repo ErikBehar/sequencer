@@ -7,8 +7,7 @@ public class SequencerTargetTypes
     static public string character = "character";
 
     //put your custom types in here
-    static public string[] targetTypes = new string[]
-    {
+    static public string[] targetTypes = {
         positional,
         character
     };

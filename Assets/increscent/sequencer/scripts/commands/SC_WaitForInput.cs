@@ -53,17 +53,17 @@ public class SC_WaitForInput : SequencerCommandBase
     }
 
 #if UNITY_EDITOR
+
+    override public void drawMinimizedUi()
+    {
+        GUILayout.Button( sequencerData.getIconTexture("input"));
+    }
+
     override public void drawCustomUi()
     { 
         GUILayout.Label("Wait For Input");
     }
 #endif
-
-    override public string toRenpy()
-    {
-        //target output: ?
-        return "";
-    }
 
     override public string toSequncerSerializedString()
     {

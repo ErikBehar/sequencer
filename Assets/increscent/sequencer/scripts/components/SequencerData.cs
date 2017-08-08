@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using System;
 
 [Serializable]
@@ -10,6 +12,45 @@ public class SequencerData : MonoBehaviour
     public List<SequencerSectionModel> sections = new List<SequencerSectionModel>();
 
     public List<SequencerVariableModel> variables = new List<SequencerVariableModel>();
+
+    public Color disabledColor = Color.grey;
+    public Color normalRowColor = new Color(0f, 1f, 1f, .15f);
+    public Color normalAltRowColor = new Color(1f, 0f, 1f, .15f);
+    public Color stubColor = new Color(1f, 1f, 0, .15f);
+    public Color dropColor = new Color(0f, 1f, 0f, .25f);
+    public Color dragColor = new Color(1f, 0f, 0f, .25f);
+
+    public int pagingSize = 100;
+
+    public Dictionary<string,Texture> iconDictionary = new Dictionary<string,Texture>();
+
+    public Texture getIconTexture(string name)
+    {
+        #if UNITY_EDITOR
+            if (iconDictionary.Count == 0)
+            {
+                iconDictionary.Add( "default", (Texture)EditorGUIUtility.Load("increscent/sequencer/generic_icon.png"));
+                iconDictionary.Add( "dialog", (Texture)EditorGUIUtility.Load("increscent/sequencer/dialog_icon.png"));
+                iconDictionary.Add( "hide", (Texture)EditorGUIUtility.Load("increscent/sequencer/hide_icon.png"));
+                iconDictionary.Add( "show", (Texture)EditorGUIUtility.Load("increscent/sequencer/show_icon.png"));
+                iconDictionary.Add( "stub", (Texture)EditorGUIUtility.Load("increscent/sequencer/note_icon.png"));
+                iconDictionary.Add( "matchTrans", (Texture)EditorGUIUtility.Load("increscent/sequencer/move_icon.png"));
+                iconDictionary.Add( "pause", (Texture)EditorGUIUtility.Load("increscent/sequencer/pause_icon.png"));
+                iconDictionary.Add( "triggerAnim", (Texture)EditorGUIUtility.Load("increscent/sequencer/triggerAnim_icon.png"));
+                iconDictionary.Add( "wait", (Texture)EditorGUIUtility.Load("increscent/sequencer/wait_icon.png"));
+                iconDictionary.Add( "setWaypoint", (Texture)EditorGUIUtility.Load("increscent/sequencer/waypoint_icon.png"));
+                iconDictionary.Add( "sendMessage", (Texture)EditorGUIUtility.Load("increscent/sequencer/sendMessage_icon.png"));
+                iconDictionary.Add( "input", (Texture)EditorGUIUtility.Load("increscent/sequencer/input_icon.png"));
+                iconDictionary.Add( "switchRoot", (Texture)EditorGUIUtility.Load("increscent/sequencer/switchRoot_icon.png"));
+                iconDictionary.Add( "waitProximity", (Texture)EditorGUIUtility.Load("increscent/sequencer/proximity_icon.png"));
+            }
+
+            if ( iconDictionary.ContainsKey( name))
+                return iconDictionary[name];
+            else
+                return iconDictionary["default"];
+        #endif
+    }
 
     public string[] getSectionNames()
     {

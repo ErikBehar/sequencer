@@ -2,9 +2,10 @@
 
 #if UNITY_EDITOR
 using UnityEditor;
- #endif
+#endif
 using System.Collections;
 using System;
+using DG.Tweening;
 
 /// <summary>
 /// 2D : Visual Novel: Hide : Sequencer Command
@@ -13,7 +14,6 @@ using System;
 // goint to ( target or null )
 // time to hide there ( 0 or x seconds) (zero just makes it disappear instantly)
 /// </summary>
-using Holoville.HOTween;
 
 [Serializable]
 public class SC_VN_Hide : SequencerCommandBase
@@ -54,7 +54,7 @@ public class SC_VN_Hide : SequencerCommandBase
             undo();
         } else
         {
-            if (tween != null && !tween.isComplete)
+            if (tween != null && !tween.IsComplete())
             {
                 tween.Kill();
             }
@@ -65,7 +65,8 @@ public class SC_VN_Hide : SequencerCommandBase
             if (useTo)
             {
                 Transform to = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedTo)].target.transform;
-                tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onExecuteCompleteEvt));
+                //tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onExecuteCompleteEvt));
+                tween = DOTween.To(() => target.localPosition, x => target.localPosition = x, new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z), time).OnComplete( onExecuteCompleteEvt );
             } else
             {
                 onExecuteComplete();
@@ -78,7 +79,7 @@ public class SC_VN_Hide : SequencerCommandBase
     
     override public void undo()
     {
-        if (tween != null && !tween.isComplete)
+        if (tween != null && !tween.IsComplete())
         {
             tween.Kill();
         }
@@ -91,7 +92,8 @@ public class SC_VN_Hide : SequencerCommandBase
             Transform from = null;
             from = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedTo)].target.transform;
             target.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
-            tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoCompleteEvt));
+            //tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z)).OnComplete(onUndoCompleteEvt));
+            tween = DOTween.To(() => target.localPosition, x => target.localPosition = x, new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z), time).OnComplete( onUndoCompleteEvt );
         } else
         {
             target.localPosition = previousPosition;
@@ -101,7 +103,7 @@ public class SC_VN_Hide : SequencerCommandBase
 
     override public void forward(SequencePlayer player)
     {
-        if (waitForEndOfTween && tween != null && !tween.isComplete)
+        if (waitForEndOfTween && tween != null && !tween.IsComplete())
         {
             tween.Kill();
 
@@ -119,7 +121,7 @@ public class SC_VN_Hide : SequencerCommandBase
     
     override public void backward(SequencePlayer player)
     {
-        if (waitForEndOfTween && tween != null && !tween.isComplete)
+        if (waitForEndOfTween && tween != null && !tween.IsComplete())
         {
             tween.Kill();
 
@@ -129,7 +131,7 @@ public class SC_VN_Hide : SequencerCommandBase
         }
     }
 
-    public void onExecuteCompleteEvt(TweenEvent evt)
+    public void onExecuteCompleteEvt()
     {
         onExecuteComplete();
     }
@@ -143,7 +145,7 @@ public class SC_VN_Hide : SequencerCommandBase
         }
     }
 
-    public void onUndoCompleteEvt(TweenEvent evt)
+    public void onUndoCompleteEvt()
     {
         onUndoComplete();
     }
@@ -161,16 +163,18 @@ public class SC_VN_Hide : SequencerCommandBase
     { 
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);
         string[] nickPos = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.positional);
-        
+
         GUILayout.Label("hide who?:");
-        lastSelectedWho = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, lastSelectedWho), nickChars, GUILayout.Width(100))];
+        if ( nickChars != null)
+            lastSelectedWho = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, lastSelectedWho), nickChars, GUILayout.Width(100))];
         
         useTo = GUILayout.Toggle(useTo, "use to?");
 
         if (useTo)
         {
             GUILayout.Label("going to:"); 
-            lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
+            if ( nickPos != null)
+                lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
         } else
         {
             lastSelectedTo = "";

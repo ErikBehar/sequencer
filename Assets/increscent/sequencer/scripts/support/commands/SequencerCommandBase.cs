@@ -1,11 +1,9 @@
 ﻿using UnityEngine;
-
 #if UNITY_EDITOR
-using UnityEditor;
+    using UnityEditor.SceneManagement;
+    using UnityEditor;
 #endif
-using System.Collections;
 using System;
-using System.Reflection;
 
 [Serializable]
 public class SequencerCommandBase : ScriptableObject
@@ -18,10 +16,14 @@ public class SequencerCommandBase : ScriptableObject
     public int currIndex = -1;
     public int targetIndex = -1;
 
+    public bool isEnabled = true;
+
     public SequencerData sequencerData;
 
     //this is temporary 
     public SequencePlayer myPlayer;
+
+    protected Texture icon;
 
     public void init(string in_sectionName, SequencerData data)
     {
@@ -64,12 +66,18 @@ public class SequencerCommandBase : ScriptableObject
         cmd.currIndex = currIndex;
         cmd.targetIndex = targetIndex;
         cmd.sequencerData = sequencerData;
+        cmd.isEnabled = isEnabled;
         return cmd;
     }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     public virtual void drawCustomUi()
     {
+    }
+
+    public virtual void drawMinimizedUi()
+    {
+        GUILayout.Button( sequencerData.getIconTexture("default"));
     }
 
     public void drawFrontUi()
@@ -82,6 +90,13 @@ public class SequencerCommandBase : ScriptableObject
     
         GUILayout.Label(listIndex.ToString(), GUILayout.Width(40));
 
+        Color defaultColor = GUI.contentColor;
+        GUI.contentColor = Color.black;
+        GUILayout.Label(name, GUILayout.Width(125));
+        GUI.contentColor = defaultColor;
+
+        isEnabled = GUILayout.Toggle(isEnabled, "Enabled");
+            
         if (GUILayout.Button("Change Position ->", GUILayout.Width(100)))
             currIndex = targetIndex;
 
@@ -89,11 +104,9 @@ public class SequencerCommandBase : ScriptableObject
         
         if (currIndex != listIndex)
         {
-            changeIndex(currIndex, listIndex);
+            changeIndex(currIndex);
         }
 
-        GUILayout.Label(name, GUILayout.Width(125));
-            
         EditorGUILayout.BeginVertical();
         {
             if (GUILayout.Button("^", GUILayout.Width(30)))
@@ -110,20 +123,37 @@ public class SequencerCommandBase : ScriptableObject
         if (GUILayout.Button("Delete this Command", GUILayout.Width(150)))
             deleteThisCommand();
     }
-#endif
 
-    public void changeIndex(int newPos, int oldPos)
+    void makeSceneDirty()
+    {
+        EditorSceneManager.MarkSceneDirty(sequencerData.gameObject.scene);
+    }
+        
+    public int changeIndex(int newPos)
     {
         if (newPos > -1)
         {
             SequencerSectionModel sectionModel = sequencerData.getSectionModel(sectionName);
 
             newPos = Mathf.Clamp(newPos, 0, sectionModel.commandList.Count - 1);
+
+            //if you are removing below index of current target then value should stay the same (target moved one back, we occupy the index of previous target)
+            //if you are removing above index of current target then value should be +1  (target in same spot, we occupy the index in front of it )
+            int offset = 0;
+            if (listIndex > newPos)
+                offset = 1; 
+            
             sectionModel.commandList.Remove(this);
-            sectionModel.commandList.Insert(newPos, this);
-        
+            sectionModel.commandList.Insert( Mathf.Max( 0, newPos + offset), this);
+
             updateAllIndex();
+
+            makeSceneDirty();
+
+            return this.currIndex;
         }
+
+        return -1;
     }
 
     public void doReorder(int direction)
@@ -139,6 +169,8 @@ public class SequencerCommandBase : ScriptableObject
             sectionModel.commandList.Insert(newIndex, this);
         
             updateAllIndex();
+
+            makeSceneDirty();
         }
     }
 
@@ -154,10 +186,13 @@ public class SequencerCommandBase : ScriptableObject
                 DestroyImmediate(command);
 
                 updateAllIndex();
+
+                makeSceneDirty();
                 break;         
             }
         }
     }
+#endif
 
     public int findIndexOf(SequencerCommandBase command)
     {

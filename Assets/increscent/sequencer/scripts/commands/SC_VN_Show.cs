@@ -5,6 +5,7 @@ using UnityEditor;
  #endif
 using System.Collections;
 using System;
+using DG.Tweening;
 
 /// <summary>
 /// 2D : Visual Novel: Show : Sequencer Command
@@ -14,7 +15,6 @@ using System;
 // goint to ( target or null )
 // time to get there ( 0 or x seconds) (zero just makes it appear in the to pos)
 /// </summary>
-using Holoville.HOTween;
 
 [Serializable]
 public class SC_VN_Show : SequencerCommandBase
@@ -23,6 +23,7 @@ public class SC_VN_Show : SequencerCommandBase
     public override string commandType{ get { return "base"; } }
 
     public bool useFrom = false;
+    public bool useTo = true;
     public string lastSelectedWho = "";
     public string lastSelectedFrom = "";
     public string lastSelectedTo = "";
@@ -30,6 +31,7 @@ public class SC_VN_Show : SequencerCommandBase
     public bool waitForEndOfTween = false;
     private bool wasActiveAtStart = false;
     private Vector3 previousPosition;
+    public bool useLocal = true;
 
     Tweener tween;
 
@@ -42,11 +44,13 @@ public class SC_VN_Show : SequencerCommandBase
     {       
         SC_VN_Show newCmd = ScriptableObject.CreateInstance(typeof(SC_VN_Show)) as SC_VN_Show;
         newCmd.useFrom = useFrom;
+        newCmd.useTo = useTo;
         newCmd.lastSelectedWho = lastSelectedWho;
         newCmd.lastSelectedTo = lastSelectedTo;
         newCmd.lastSelectedFrom = lastSelectedFrom;
         newCmd.time = time;
         newCmd.waitForEndOfTween = waitForEndOfTween;
+        newCmd.useLocal = useLocal;
         return base.clone(newCmd);        
     }
 
@@ -65,27 +69,52 @@ public class SC_VN_Show : SequencerCommandBase
                 from = sequencerData.getTargetModel(lastSelectedFrom).target.transform;
             else
             {
-                from = target.transform;
-                previousPosition = from.localPosition;
+                if ( target != null)
+                    from = target.transform;
+
+                if (useLocal)
+                    previousPosition = from.localPosition;
+                else
+                    previousPosition = from.position;
             }
-            Transform to = sequencerData.getTargetModel(lastSelectedTo).target.transform;
-         
+
+
+            Transform to = null;
+            if (target != null)
+                to = target.transform; 
+            
+            if (useTo)
+                to = sequencerData.getTargetModel(lastSelectedTo).target.transform;
+            
             wasActiveAtStart = target.gameObject.activeInHierarchy;
             target.gameObject.SetActive(true);  
 
-            target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            if (useLocal)
+                target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            else
+                target.transform.position = new Vector3(from.position.x, from.position.y, from.position.z);
 
-            Vector3 finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            Vector3 finalPos;
+            if (useLocal)
+                finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            else
+                finalPos = new Vector3(to.position.x, to.position.y, to.position.z);
 
-            if (time == 0)
+            if ( time == 0)
             {        
                 target.localPosition = finalPos;
                 if (waitForEndOfTween)
                 {
                     myPlayer.callBackFromCommand();
                 }
-            } else
-                tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", finalPos).OnComplete(onTweenComplete));
+            }
+            else
+            {
+                if ( useLocal)
+                    tween = DOTween.To(() => target.localPosition, x => target.localPosition = x, finalPos, time).OnComplete( onTweenComplete );
+                else
+                    tween = DOTween.To(() => target.position, x => target.position = x, finalPos, time).OnComplete( onTweenComplete );
+            }
         }
         
         if (!waitForEndOfTween)
@@ -100,40 +129,68 @@ public class SC_VN_Show : SequencerCommandBase
         if (useFrom)
             to = sequencerData.getTargetModel(lastSelectedFrom).target.transform;
 
-        target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+        if ( useLocal)
+            target.transform.localPosition = new Vector3(from.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+        else
+            target.transform.position = new Vector3(from.position.x, from.position.y, from.position.z);
 
         Vector3 finalPos;
-        if (useFrom)            
-            finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+        if (useFrom)
+        {
+            if ( useLocal)
+                finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            else
+                finalPos = new Vector3(to.position.x, to.position.y, to.position.z);
+        }
         else
-            finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+        {
+            if (useLocal)
+                finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+            else
+                finalPos = new Vector3(previousPosition.x, previousPosition.y, previousPosition.z);
+        }
 
         if (time == 0)
-        {        
-            target.localPosition = finalPos;
+        {       
+            if (useLocal)
+                target.localPosition = finalPos;
+            else
+                target.position = finalPos;
+            
+            target.gameObject.SetActive(wasActiveAtStart);
             if (waitForEndOfTween)
             {
                 myPlayer.callBackFromCommand();
             }
-        } else
-            tween = HOTween.To(target, time, new TweenParms().NewProp("localPosition", finalPos).OnComplete(onUndoComplete));
+        }
+        else
+        {
+            if ( useLocal)
+                tween = DOTween.To(() => target.localPosition, x => target.localPosition = x, finalPos, time).OnComplete( onTweenComplete );
+            else
+                tween = DOTween.To(() => target.position, x => target.position = x, finalPos, time).OnComplete( onTweenComplete );
+        }
     }
 
     override public void forward(SequencePlayer player)
     {
-        if (waitForEndOfTween && tween != null && !tween.isComplete)
+        if (waitForEndOfTween && tween != null && !tween.IsComplete())
         {
             tween.Kill();
             
             Transform target = sequencerData.getTargetModel(lastSelectedWho).target.transform;
             Transform to = sequencerData.getTargetModel(lastSelectedTo).target.transform;
-            target.localPosition = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);            
+
+            if( useLocal )
+                target.localPosition = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z); 
+            else
+                target.position = new Vector3(to.position.x, to.position.y, to.position.z);
         }
     }
     
     override public void backward(SequencePlayer player)
     {
-        if (tween != null && !tween.isComplete)
+        if (tween != null && !tween.IsComplete())
         {
             tween.Kill();
 
@@ -141,16 +198,28 @@ public class SC_VN_Show : SequencerCommandBase
             Vector3 finalPos;
             if (useFrom)
             {
-                Transform to = sequencerData.getTargetModel(lastSelectedFrom).target.transform;          
-                finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
-            } else
-                finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
-            
-            target.localPosition = finalPos;    
+                Transform to = sequencerData.getTargetModel(lastSelectedFrom).target.transform;  
+                if (useLocal)
+                    finalPos = new Vector3(to.localPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+                else
+                    finalPos = new Vector3(to.position.x, to.position.y, to.position.z);
+            }
+            else
+            {
+                if (useLocal)
+                    finalPos = new Vector3(previousPosition.x, target.transform.localPosition.y, target.transform.localPosition.z);
+                else
+                    finalPos = new Vector3(previousPosition.x, previousPosition.y, previousPosition.z);
+            }
+
+            if (useLocal)
+                target.localPosition = finalPos;
+            else
+                target.position = finalPos;
         }
     }
     
-    public void onTweenComplete(TweenEvent evt)
+    public void onTweenComplete()
     {  
         if (waitForEndOfTween)
         {
@@ -158,7 +227,7 @@ public class SC_VN_Show : SequencerCommandBase
         }
     }
 
-    public void onUndoComplete(TweenEvent evt)
+    public void onUndoComplete()
     {
         Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
         target.gameObject.SetActive(wasActiveAtStart);
@@ -175,7 +244,8 @@ public class SC_VN_Show : SequencerCommandBase
         string[] nickPos = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.positional);
 
         GUILayout.Label("show who?:");
-        
+
+        if ( nickChars != null)
         lastSelectedWho = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, lastSelectedWho), nickChars, GUILayout.Width(100))];
         
         useFrom = GUILayout.Toggle(useFrom, "use from?");
@@ -183,20 +253,31 @@ public class SC_VN_Show : SequencerCommandBase
         if (useFrom)
         {
             GUILayout.Label("start from:"); 
-            lastSelectedFrom = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedFrom), nickPos, GUILayout.Width(100))];
+            if ( nickPos != null)
+                lastSelectedFrom = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedFrom), nickPos, GUILayout.Width(100))];
         } else
         {
             lastSelectedFrom = "";
         }
 
-        GUILayout.Label("going to:"); 
-        lastSelectedTo = nickPos [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
+        useTo = GUILayout.Toggle(useTo, "use to?");
+
+        if (useTo)
+        {
+            GUILayout.Label("going to:"); 
+            if ( nickPos != null)
+                lastSelectedTo = nickPos[EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickPos, lastSelectedTo), nickPos, GUILayout.Width(100))];
+        }
+        else
+            lastSelectedTo = "";
 
         GUILayout.Label("transition Time:");
         time = EditorGUILayout.FloatField(time);
 
         GUILayout.Label("Wait for transition to end before continue?:");
         waitForEndOfTween = EditorGUILayout.Toggle(waitForEndOfTween);
+
+        useLocal = GUILayout.Toggle(useLocal, "Use Local Space");
     }
     #endif
 
@@ -208,19 +289,21 @@ public class SC_VN_Show : SequencerCommandBase
 
     override public string toSequncerSerializedString()
     {
-        return GetType().Name + "╫" + useFrom.ToString() + "╫"
-            + lastSelectedWho + "╫" + lastSelectedFrom + "╫" + lastSelectedTo + "╫"
-            + time.ToString() + "╫" + waitForEndOfTween.ToString() + "╫\n";
+        return GetType().Name + "╫" + useFrom + "╫" + useTo + "╫"
+        + lastSelectedWho + "╫" + lastSelectedFrom + "╫" + lastSelectedTo + "╫"
+        + time + "╫" + waitForEndOfTween + "╫" + useLocal + "╫\n";
     }
 
     override public void initFromSequncerSerializedString(string[] splitString)
     {
         useFrom = bool.Parse(splitString [1]);
-        lastSelectedWho = splitString [2];
-        lastSelectedFrom = splitString [3];
-        lastSelectedTo = splitString [4];
-        time = float.Parse(splitString [5]);
-        waitForEndOfTween = bool.Parse(splitString [6]);
+        useTo = bool.Parse(splitString[2]);
+        lastSelectedWho = splitString [3];
+        lastSelectedFrom = splitString [4];
+        lastSelectedTo = splitString [5];
+        time = float.Parse(splitString [6]);
+        waitForEndOfTween = bool.Parse(splitString [7]);
+        useLocal = bool.Parse(splitString[8]);
     }
 
     override public bool updateTargetReference(string oldNickname, string newNickName)
