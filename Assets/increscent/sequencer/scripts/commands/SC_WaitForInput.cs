@@ -56,7 +56,7 @@ public class SC_WaitForInput : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("input"));
+        GUILayout.Button( sequencerData.getIconTexture("input"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()

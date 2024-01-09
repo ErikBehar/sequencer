@@ -3,12 +3,13 @@
 using UnityEditor;
 #endif
 using System;
+using System.Collections.Generic;
+using System.Collections;
 
 /// <summary>
 /// 2D : Visual Novel: Dialog : Sequencer Command
 /// Shows text and a heading for x time ( 0 == infinite)
 /// </summary>
-using System.Collections.Generic;
 
 [Serializable]
 public class SC_VN_Dialog : SequencerCommandBase
@@ -27,6 +28,8 @@ public class SC_VN_Dialog : SequencerCommandBase
     public float volume = 1.0f;
 
     public float bubbleXOffset = 0;
+
+    private Coroutine coroutineWaitTime = null;
 
     override public void initChild()
     {
@@ -53,27 +56,70 @@ public class SC_VN_Dialog : SequencerCommandBase
         
         if (audioClip != null)
         {
-            if (SoundManagerEB.Get().getSfxByName(audioClip.name) == null)
-                SoundManagerEB.Get().sfxClips.Add(audioClip); 
-            SoundManagerEB.Get().playSfx(audioClip.name, volume);
+            if (SoundManager.Get().getSfxByName(audioClip.name) == null)
+                SoundManager.Get().sfxClips.Add(audioClip); 
+            SoundManager.Get().playSfx(audioClip.name, volume);
         }
 
-        GameObject target;
+        GameObject target = null;
         if ( selectSpeakerPosition )
             target = sequencerData.targets [sequencerData.getIndexOfTarget(speakerPosName)].target;
-        else
-            target = sequencerData.targets [sequencerData.getIndexOfTarget(speakerTargetName)].target;
+        else{
+            //by default we attempt to get the speech bubble target which is child of the outfit
+            SequencerTargetModel model = sequencerData.getTargetModel(speakerTargetName);
+            if (model != null)
+            {
+                if (model.target!= null)
+                {
+                    VN_CharBase charcomp = model.target.GetComponent<VN_CharBase>();
+                    
+                    if (charcomp != null)
+                    {
+                        GameObject attireGO = charcomp.getCurrentAttireGO();
+                        if ( attireGO != null && attireGO.transform.childCount > 0){
+                            target = attireGO.transform.GetChild(0).gameObject;
+                            Debug.Log( "target is: " + target.name);
+                        }
+                    }
+                }
+            }
+
+            //if we dont find it then use the characters positional target
+            if ( target == null){
+                Debug.Log( " did not find bubble child");
+                target = sequencerData.targets [sequencerData.getIndexOfTarget(speakerTargetName)].target;
+            }
+        }
         
         myPlayer.dialogController.showDialog(parseTextForVarsAndBB(text), target, bubbleXOffset);
     
         myPlayer.inRewindMode = false;
-        myPlayer.callBackFromCommand(true); 
+
+        if ( time == 0)
+        {
+            myPlayer.callBackFromCommand(true);
+        }
+        else
+        {
+            coroutineWaitTime = myPlayer.StartCoroutine(waitTimeThenCallback());
+        }
     }
-    
+
+    IEnumerator waitTimeThenCallback()
+    {
+        yield return new WaitForSeconds(time);
+        myPlayer.callBackFromCommand(false);
+    }
+
     override public void undo()
     {
+        if ( coroutineWaitTime != null ){
+            myPlayer.StopCoroutine(coroutineWaitTime);
+            coroutineWaitTime = null;
+        }
+
         if (audioClip != null)
-            SoundManagerEB.Get().stopPlayingSoundList(new List<string>(){audioClip.name});
+            SoundManager.Get().stopPlayingSoundList(new List<string>(){audioClip.name});
 
         myPlayer.dialogController.hideDialog();
     }
@@ -81,14 +127,19 @@ public class SC_VN_Dialog : SequencerCommandBase
     void notifyForward()
     {
         if (audioClip != null)
-            SoundManagerEB.Get().stopPlayingSoundList(new List<string>(){audioClip.name});
+            SoundManager.Get().stopPlayingSoundList(new List<string>(){audioClip.name});
         
         myPlayer.dialogController.onForward();
     }
 
     override public void forward(SequencePlayer player)
-    {
-		myPlayer = player;
+    {    
+        myPlayer = player;
+
+        if ( coroutineWaitTime != null ){
+            myPlayer.StopCoroutine(coroutineWaitTime);
+            coroutineWaitTime = null;
+        }
 
         if (myPlayer.dialogController.dialogIsShown())
         {
@@ -111,7 +162,7 @@ public class SC_VN_Dialog : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("dialog"));
+        GUILayout.Button( sequencerData.getIconTexture("dialog"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()
@@ -123,7 +174,7 @@ public class SC_VN_Dialog : SequencerCommandBase
             speakerTargetName = nickChars [EditorGUILayout.Popup(sequencerData.getIndexFromArraySafe(nickChars, speakerTargetName), nickChars, GUILayout.Width(100))];
     
         GUILayout.Label("Text:"); 
-        text = EditorGUILayout.TextField(text, GUILayout.Width(300));
+        text = EditorGUILayout.TextArea(text, GUILayout.Width(300));
                 
         GUILayout.Label("Time:"); 
         time = EditorGUILayout.FloatField(time);
@@ -151,23 +202,7 @@ public class SC_VN_Dialog : SequencerCommandBase
 
     private string parseTextForVarsAndBB(string text)
     {
-        //variables
-        while (text.IndexOf( "[" ) > -1)
-        {
-            int indexOpen = text.IndexOf("[");
-            if (indexOpen > -1)
-            {
-                int indexClose = text.IndexOf("]");
-                string substring = text.Substring(indexOpen + 1, indexClose - (indexOpen + 1));
-                if (myPlayer.runningTimeVariablesDictionary.ContainsKey(substring))
-                {
-                    text = text.Replace("[" + substring + "]", myPlayer.runningTimeVariablesDictionary [substring]);
-                } else
-                {
-                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - indexClose);
-                }
-            }
-        }
+        text = SequencerVariableModel.ParseTextForVars(text, myPlayer.runningTimeVariablesDictionary);
 
         if (myPlayer.usingNGUI)
         {
@@ -198,6 +233,7 @@ public class SC_VN_Dialog : SequencerCommandBase
             text = text.Replace("{/b}", "</b>");
             text = text.Replace("{i}", "<i>");
             text = text.Replace("{/i}", "</i>");
+            //TODO size & color
         }
 
         return text;

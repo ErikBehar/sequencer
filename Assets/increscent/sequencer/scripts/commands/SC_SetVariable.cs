@@ -2,8 +2,7 @@
 
 #if UNITY_EDITOR
 using UnityEditor;
- #endif
-using System.Collections;
+#endif
 using System;
 
 /// <summary>
@@ -24,6 +23,8 @@ public class SC_SetVariable : SequencerCommandBase
     public int typeIndex = 0; 
     private string previousValue;
     private int varIndex = 0;
+
+    private bool previousValueWasSetOnce = false;
 
     string[] expressionTypes = new string[]
     {
@@ -57,23 +58,28 @@ public class SC_SetVariable : SequencerCommandBase
             string result = "0";
             if (typeIndex == 0)
                 result = variableValue;
-            
-            if (myPlayer.runningTimeVariablesDictionary.ContainsKey(variableName))
+
+            if (!previousValueWasSetOnce)
             {
-                previousValue = myPlayer.runningTimeVariablesDictionary [variableName];
-            } else
-            {
-                myPlayer.runningTimeVariablesDictionary.Add(variableName, result);
-                previousValue = result;
+                previousValueWasSetOnce = true;
+                if (myPlayer.runningTimeVariablesDictionary.ContainsKey(variableName))
+                {
+                    previousValue = myPlayer.runningTimeVariablesDictionary[variableName];
+                }
+                else
+                {
+                    myPlayer.runningTimeVariablesDictionary.Add(variableName, result);
+                    previousValue = result;
+                }
             }
 
             if (typeIndex == 1)
             {
-                myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalInt", parseTextForVars(variableValue));
+                myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalInt", SequencerVariableModel.ParseTextForVars(variableValue, myPlayer.runningTimeVariablesDictionary));
                 result = myPlayer.lastEvalResultInt.ToString();
             } else if (typeIndex == 2)
             {
-                myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalFloat", parseTextForVars(variableValue));
+                myPlayer.gameObject.GetComponent("SequencerEvalExpression").SendMessage("evalFloat", SequencerVariableModel.ParseTextForVars(variableValue, myPlayer.runningTimeVariablesDictionary));
                 result = myPlayer.lastEvalResultFloat.ToString();
             }
 
@@ -147,37 +153,6 @@ public class SC_SetVariable : SequencerCommandBase
         }      
     }
     #endif
-
-    private string parseTextForVars(string text)
-    {
-        int count = 0;
-        int max = 30; //max 30 variable replacements, so we dont crash in weird cases
-
-        //variables
-        while (text.IndexOf( "[" ) > -1 && count < max)
-        {
-            count ++;
-
-            int indexOpen = text.IndexOf("[");
-            if (indexOpen > -1)
-            {
-                int indexClose = text.IndexOf("]");
-                string substring = text.Substring(indexOpen + 1, indexClose - (indexOpen + 1));
-                if (myPlayer.runningTimeVariablesDictionary.ContainsKey(substring))
-                {
-                    text = text.Replace("[" + substring + "]", myPlayer.runningTimeVariablesDictionary [substring]);
-                } else
-                {
-                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - (indexClose + 1));
-                }
-            }
-        }
-
-        if (count > 30)
-            Debug.LogError("Stopped Forever Loop or 30 + variable parse in SC_SetVariable.cs, make sure to fix this !");
-    
-        return text;
-    }
 
     override public string toRenpy()
     {

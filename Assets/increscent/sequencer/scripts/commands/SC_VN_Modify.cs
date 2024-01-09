@@ -83,6 +83,11 @@ public class SC_VN_Modify : SequencerCommandBase
     } 
     
 #if UNITY_EDITOR
+    override public void drawMinimizedUi()
+    {
+        GUILayout.Button( sequencerData.getIconTexture("switchRoot"), GUILayout.Width(32));
+    }
+
     override public void drawCustomUi()
     { 
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);

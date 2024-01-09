@@ -1,8 +1,7 @@
-﻿using UnityEngine;
-using System.Collections;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 public class SequencerRenPy 
 {
@@ -39,6 +38,7 @@ public class SequencerRenPy
             SequencerTargetModel targetModel;
     
             commandWasValid = true;
+            string failLine = "";
             switch (firstWord)
             {
                 case ("label"):
@@ -316,7 +316,7 @@ public class SequencerRenPy
                         }
 
                         commandWasValid = false;
-                        string failLine = string.Join(" ", splitString);
+                        failLine = string.Join(" ", splitString);
                         
                         //only print out lines that are not empty
                         if (failLine.Length > 0 && failLine != " ")
@@ -421,7 +421,7 @@ public class SequencerRenPy
                     //not found 
                     commandWasValid = false;
 
-                    string failLine = string.Join(" ", splitString);
+                    failLine = string.Join(" ", splitString);
 
                     //only print out lines that are not empty
                     if (failLine.Length > 0 && failLine != " ")

@@ -66,7 +66,7 @@ public class SC_SendMessage : SequencerCommandBase
 
         override public void drawMinimizedUi()
         {
-            GUILayout.Button( sequencerData.getIconTexture("sendMessage"));
+            GUILayout.Button( sequencerData.getIconTexture("sendMessage"), GUILayout.Width(32));
         }
 
         override public void drawCustomUi()

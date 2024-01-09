@@ -24,7 +24,8 @@ public class SC_VN_Choice : SequencerCommandBase
     public List<string> sectionNameList;
     public List<string> optionTextList;
     public List<int> commandIndexList;
-   
+    public List<string> expressionList;
+
     [HideInInspector]
     public List<SequencerCommandBase>
         targetCommandList;
@@ -41,6 +42,7 @@ public class SC_VN_Choice : SequencerCommandBase
         newCmd.optionTextList = new List<string>(optionTextList.ToArray());
         newCmd.commandIndexList = new List<int>(commandIndexList.ToArray());
         newCmd.targetCommandList = new List<SequencerCommandBase>(targetCommandList.ToArray());
+        newCmd.expressionList = new List<string>(expressionList.ToArray());
         return base.clone(newCmd);        
     }
 
@@ -60,6 +62,15 @@ public class SC_VN_Choice : SequencerCommandBase
             model.text = optionTextList [i];
             model.sceneNameToJump = sectionNameList [i];
             model.sceneCommandIndexToJump = commandIndexList [i];
+
+            if (string.IsNullOrEmpty(expressionList[i]))
+                model.showChoice = true;
+            else
+            {
+                myPlayer.gameObject.GetComponent<SequencerEvalExpression>().evalBool(SequencerVariableModel.ParseTextForVars(expressionList[i], myPlayer.runningTimeVariablesDictionary));
+                model.showChoice = myPlayer.lastEvalResultBool;
+            }
+            
             choices.Add(model);
         }
         
@@ -81,8 +92,13 @@ public class SC_VN_Choice : SequencerCommandBase
     {
         undo();
     }
-   
-    #if UNITY_EDITOR 
+
+#if UNITY_EDITOR
+
+    override public void drawMinimizedUi()
+    {
+        GUILayout.Button(sequencerData.getIconTexture("choice"), GUILayout.Width(32));
+    }
     override public void drawCustomUi()
     { 
         EditorGUILayout.LabelField("number of options:");
@@ -123,7 +139,13 @@ public class SC_VN_Choice : SequencerCommandBase
                         {
                             commandIndexList [i] = Mathf.Clamp(EditorGUILayout.IntField(commandIndexList [i]), 0, commandIndexMax - 1);
                         }
-                        
+
+                        // show an option depending on a variable expression
+                        // Note that we don't actually change the list here, just pass a bool per command to the ui
+                        GUILayout.Label("Should show Expression:");
+                        expressionList[i] = EditorGUILayout.TextField(expressionList[i], GUILayout.Width(100f));
+
+
                         targetCommandList [i] = sequencerData.getSectionModel(sectionNameList [i]).commandList [commandIndexList [i]];
                     }
                     EditorGUILayout.EndHorizontal();  
@@ -148,6 +170,9 @@ public class SC_VN_Choice : SequencerCommandBase
         if (targetCommandList == null)
             targetCommandList = new List<SequencerCommandBase>(size);
 
+        if (expressionList == null)
+            expressionList = new List<string>(size);
+
         if (sectionNameList.Count < size)
             sectionNameList.AddRange(Enumerable.Repeat("", size - sectionNameList.Count).ToList());
 
@@ -166,10 +191,14 @@ public class SC_VN_Choice : SequencerCommandBase
         if (optionTextList.Count < size)
             optionTextList.AddRange(Enumerable.Repeat("option", size - optionTextList.Count).ToList());
 
+        if (expressionList.Count < size)
+            expressionList.AddRange(Enumerable.Repeat("", size-expressionList.Count).ToList());
+
         commandIndexList = commandIndexList.GetRange(0, size);
         sectionNameList = sectionNameList.GetRange(0, size);
         optionTextList = optionTextList.GetRange(0, size);
         targetCommandList = targetCommandList.GetRange(0, size);
+        expressionList = expressionList.GetRange(0, size);
     }
 
     override public void indexWasUpdated()
@@ -227,7 +256,7 @@ public class SC_VN_Choice : SequencerCommandBase
         string choices = "";
         for (int i=0; i < size; i++)
         {
-            choices += sectionNameList [i] + "╫" + optionTextList [i] + "╫" + commandIndexList [i] + "╫";
+            choices += sectionNameList[i] + "╫" + optionTextList[i] + "╫" + commandIndexList[i] + "╫" + expressionList[i] + "╫";    
         }
 
         return GetType().Name + "╫" + choices + "╫\n";
@@ -238,12 +267,14 @@ public class SC_VN_Choice : SequencerCommandBase
         sectionNameList = new List<string>();
         optionTextList = new List<string>();
         commandIndexList = new List<int>();
+        expressionList = new List<string>();
 
         for (int i=1; i+2 < splitString.Length; i+=3)
         {
             sectionNameList.Add(splitString [i]);
             optionTextList.Add(splitString [i + 1]);
             commandIndexList.Add(int.Parse(splitString [i + 2]));
+            expressionList.Add(splitString[i + 3]);
         }
     }
 

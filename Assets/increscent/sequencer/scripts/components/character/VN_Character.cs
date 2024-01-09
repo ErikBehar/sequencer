@@ -129,4 +129,12 @@ public class VN_Character : VN_CharBase
         else
             transform.localScale = Vector3.one;
     }
+
+    public override GameObject getCurrentAttireGO(){
+        int index = getCurrentAttire();
+        if ( index != -1){
+            return attires[index];
+        }
+        return null;
+    }
 }

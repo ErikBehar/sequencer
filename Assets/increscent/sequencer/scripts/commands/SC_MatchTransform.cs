@@ -157,7 +157,7 @@ public class SC_MatchTransform : SequencerCommandBase
 
     public void onUndoComplete()
     {
-        //Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
+        Transform target = sequencerData.targets [sequencerData.getIndexOfTarget(lastSelectedWho)].target.transform;
 
         if (waitForEndOfTween)
         {
@@ -169,7 +169,7 @@ public class SC_MatchTransform : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("matchTrans"));
+        GUILayout.Button( sequencerData.getIconTexture("matchTrans"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()

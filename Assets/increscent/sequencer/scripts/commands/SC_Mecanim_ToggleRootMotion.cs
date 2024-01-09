@@ -51,7 +51,7 @@ public class SC_Mecanim_ToggleRootMotion : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("switchRoot"));
+        GUILayout.Button( sequencerData.getIconTexture("switchRoot"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()

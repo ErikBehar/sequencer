@@ -10,7 +10,7 @@ using System;
 /// <summary>
 /// 2D : Visual Novel: Expression Jump : Sequencer Command
 /// Jumps based on evaluation of a boolean expression
-/// first expression to evaluate to true is the winnes (order matters)
+/// first expression to evaluate to true is the winner (order matters)
 /// </summary>
 using System.Linq;
 
@@ -61,7 +61,7 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                 int foundIndex = -1;
                 for (int i = 0; i < expressionList.Count; i++)
                 {
-                    myPlayer.gameObject.GetComponent("Jurassic").SendMessage("evalBool", parseTextForVars(expressionList [i]));
+                    myPlayer.gameObject.GetComponent<SequencerEvalExpression>().evalBool( SequencerVariableModel.ParseTextForVars(expressionList [i], myPlayer.runningTimeVariablesDictionary));
                     if (myPlayer.lastEvalResultBool)
                     {
                         foundIndex = i;
@@ -84,9 +84,13 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
     override public void undo()
     {
         myPlayer.callBackFromCommand(); 
-    } 
-   
-    #if UNITY_EDITOR 
+    }
+
+#if UNITY_EDITOR
+    override public void drawMinimizedUi()
+    {
+        GUILayout.Button(sequencerData.getIconTexture("jump"), GUILayout.Width(32));
+    }
     override public void drawCustomUi()
     { 
         EditorGUILayout.LabelField("number of options:");
@@ -214,29 +218,6 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
                 }
             }
         }
-    }
-
-    private string parseTextForVars(string text)
-    {
-        //variables
-        while (text.IndexOf( "[" ) > -1)
-        {
-            int indexOpen = text.IndexOf("[");
-            if (indexOpen > -1)
-            {
-                int indexClose = text.IndexOf("]");
-                string substring = text.Substring(indexOpen + 1, indexClose - (indexOpen + 1));
-                if (myPlayer.runningTimeVariablesDictionary.ContainsKey(substring))
-                {
-                    text = text.Replace("[" + substring + "]", myPlayer.runningTimeVariablesDictionary [substring]);
-                } else
-                {
-                    text = text.Substring(0, indexOpen) + "{" + substring + "}" + text.Substring(indexClose, text.Length - (indexClose + 1));
-                }
-            }
-        }
-        
-        return text;
     }
 
     override public string toRenpy()

@@ -77,7 +77,7 @@ public class SequencerCommandBase : ScriptableObject
 
     public virtual void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("default"));
+        GUILayout.Button( sequencerData.getIconTexture("default"), GUILayout.Width(32));
     }
 
     public void drawFrontUi()
@@ -89,6 +89,8 @@ public class SequencerCommandBase : ScriptableObject
         }
     
         GUILayout.Label(listIndex.ToString(), GUILayout.Width(40));
+
+        drawMinimizedUi();
 
         Color defaultColor = GUI.contentColor;
         GUI.contentColor = Color.black;

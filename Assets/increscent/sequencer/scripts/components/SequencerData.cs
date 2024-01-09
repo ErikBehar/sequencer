@@ -24,6 +24,8 @@ public class SequencerData : MonoBehaviour
 
     public Dictionary<string,Texture> iconDictionary = new Dictionary<string,Texture>();
 
+    private Texture defaultTexture;
+
     public Texture getIconTexture(string name)
     {
         #if UNITY_EDITOR
@@ -43,13 +45,17 @@ public class SequencerData : MonoBehaviour
                 iconDictionary.Add( "input", (Texture)EditorGUIUtility.Load("increscent/sequencer/input_icon.png"));
                 iconDictionary.Add( "switchRoot", (Texture)EditorGUIUtility.Load("increscent/sequencer/switchRoot_icon.png"));
                 iconDictionary.Add( "waitProximity", (Texture)EditorGUIUtility.Load("increscent/sequencer/proximity_icon.png"));
-            }
+                iconDictionary.Add( "choice", (Texture)EditorGUIUtility.Load("increscent/sequencer/choice_icon.png"));
+                iconDictionary.Add( "jump", (Texture)EditorGUIUtility.Load("increscent/sequencer/jump_icon.png"));
+        }
 
             if ( iconDictionary.ContainsKey( name))
                 return iconDictionary[name];
             else
                 return iconDictionary["default"];
-        #endif
+#else
+            return defaultTexture;
+#endif
     }
 
     public string[] getSectionNames()

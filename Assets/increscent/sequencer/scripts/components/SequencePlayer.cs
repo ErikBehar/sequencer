@@ -38,6 +38,8 @@ public class SequencePlayer : MonoBehaviour
 
     public Action<string> onChangeScene = delegate{};
 
+    public UnityEngine.Events.UnityEvent<string> onEndSequence;
+
     void Start()
     {
         runningTimeVariablesDictionary = sequencerData.getVariablesAsDictionary();
@@ -137,6 +139,7 @@ public class SequencePlayer : MonoBehaviour
 
                 Debug.Log("END of Sequence! or reached end of Section with out a jump.");
 
+                onEndSequence.Invoke("auto");
             } else
             {
                 sequencerData.sections [currSectionIndex].commandList [currCommandIndex].forward(this);
@@ -179,8 +182,8 @@ public class SequencePlayer : MonoBehaviour
         {
             currSectionIndex = jumpsList [lastJumpIndex].sectionJumpedFrom;
             currCommandIndex = jumpsList [lastJumpIndex].commandJumpedFrom;
-            jumpsList.RemoveAt(lastJumpIndex);   
             onChangeScene( sequencerData.getSectionNames()[jumpsList [lastJumpIndex].sectionJumpedTo]);
+            jumpsList.RemoveAt(lastJumpIndex);   
             play();
         } 
         else if (currCommandIndex - 1 == -1)

@@ -13,6 +13,9 @@ namespace UnityEngine.UI
         protected bool
             matchVertical = true;
 
+        public float horizontalPadding = 50;
+        public float verticalPadding = 50;
+
         [System.NonSerialized]
         private RectTransform
             m_Rect;
@@ -60,7 +63,7 @@ namespace UnityEngine.UI
             
             m_Tracker.Add(this, rectTransform, (axis == 0 ? DrivenTransformProperties.SizeDeltaX : DrivenTransformProperties.SizeDeltaY));
 
-            drivenRectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, LayoutUtility.GetPreferredSize(rectTransform, axis));
+            drivenRectTransform.SetSizeWithCurrentAnchors((RectTransform.Axis)axis, LayoutUtility.GetPreferredSize(rectTransform, axis) + (axis==0 ? horizontalPadding : verticalPadding ));
         }
         
         public virtual void SetLayoutHorizontal()

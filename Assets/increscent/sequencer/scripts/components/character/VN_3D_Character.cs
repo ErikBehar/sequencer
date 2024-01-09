@@ -146,4 +146,12 @@ public class VN_3D_Character : VN_CharBase
         else
             transform.localRotation = Quaternion.Euler(initialRotation);
     }
+
+    public override GameObject getCurrentAttireGO(){
+        int index = getCurrentAttire();
+        if ( index != -1){
+            return attires[index];
+        }
+        return null;
+    }
 }

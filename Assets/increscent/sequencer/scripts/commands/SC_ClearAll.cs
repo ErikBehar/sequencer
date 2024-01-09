@@ -20,7 +20,7 @@ public class SC_ClearAll : SequencerCommandBase
     public override string commandType{ get { return "base"; } }
 
     string musicClipName = "";
-  //  float musicClipVolume = 1;
+    float musicClipVolume = 1;
     List<GameObject> targets;
     List<Vector3> positions;
     List<bool> visibilitys;
@@ -58,13 +58,13 @@ public class SC_ClearAll : SequencerCommandBase
             //attempt save state:
             
             //music 
-            if (SoundManagerEB.Get() != null)
+            if (SoundManager.Get() != null)
             {
-                musicClipName = SoundManagerEB.Get().getCurrentMusicClipName();
-               // musicClipVolume = SoundManagerEB.Get().getCurrentMusicClipVolume(); 
+                musicClipName = SoundManager.Get().getCurrentMusicClipName();
+                musicClipVolume = SoundManager.Get().getCurrentMusicClipVolume(); 
 
                 if ( clearMusic )
-                    SoundManagerEB.Get().pauseMusic();
+                    SoundManager.Get().pauseMusic();
             }
 
             //characters (visible, pos, attire, expression)
@@ -110,8 +110,8 @@ public class SC_ClearAll : SequencerCommandBase
     override public void undo()
     {
         //music 
-        if (clearMusic && SoundManagerEB.Get() != null && musicClipName != SoundManagerEB.nullSoundName)
-            SoundManagerEB.Get().unPauseMusic();
+        if (clearMusic && SoundManager.Get() != null && musicClipName != SoundManager.nullSoundName)
+            SoundManager.Get().unPauseMusic();
         
         //characters (visible, pos, attire, expression)
         int count = myPlayer.sequencerData.targets.Count;

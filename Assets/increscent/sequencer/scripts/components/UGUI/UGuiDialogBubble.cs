@@ -45,29 +45,31 @@ public class UGuiDialogBubble : DialogControllerBase
         rightBubbleOriginalDifference = (rightBubbleEdge.transform.position - speechBubbleRight.transform.position).x;
     }
 
+    // we guess which balloon to use based on general position, but we use the 
+    // actual position sent in instead of hardcoded one
     override public void showDialog(string text, GameObject charspeaker, float xOffset)
     {
         shown = true;
         text = chopTextIntoPieces(textLineSize, parseForCarriageReturns(text));
 
-        if (charspeaker.transform.localPosition.x > 1)
+        if ( Vector3.Distance(charspeaker.transform.position, leftPos.position) > Vector3.Distance(charspeaker.transform.position, rightPos.position) )
         {            
             speechTextLabelRight.text = text;
-            rightPosVec = rightPos.position + new Vector3(xOffset, 0, 0);
+            rightPosVec = charspeaker.transform.position + new Vector3(xOffset, 0, 0);
             speechBubbleRight.transform.position = rightPosVec;
             speechBubbleRight.SetActive(true);
             //lastShownText = speechTextLabelRight;
-        } else if (charspeaker.transform.localPosition.x < -1)
+        } else if (Vector3.Distance(charspeaker.transform.position, leftPos.position) < Vector3.Distance(charspeaker.transform.position, rightPos.position))
         { 
             speechTextLabelLeft.text = text;
-            leftPosVec = leftPos.position + new Vector3(xOffset, 0, 0);
+            leftPosVec = charspeaker.transform.position + new Vector3(xOffset, 0, 0);
             speechBubbleLeft.transform.position = leftPosVec;
             speechBubbleLeft.SetActive(true);
             //lastShownText = speechTextLabelLeft;
         } else
         {
             narratorTextLabel.text = text;
-            centerPosVec = centerPos.position + new Vector3(xOffset, 0, 0);
+            centerPosVec = charspeaker.transform.position + new Vector3(xOffset, 0, 0);
             narratorBubble.transform.position = centerPosVec;
             narratorBubble.SetActive(true);
             //lastShownText = narratorTextLabel;
@@ -123,15 +125,15 @@ public class UGuiDialogBubble : DialogControllerBase
     {
         if (shown)
         {
-            float newdifference = leftBubbleOriginalDifference - (leftBubbleEdge.transform.position - leftPosVec).x; 
-            if (Mathf.Abs(newdifference) > .03f)
-                speechBubbleLeft.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleLeft.gameObject.transform.position.x, speechBubbleLeft.gameObject.transform.position.x + newdifference, .25f),
-                                                                             leftPosVec.y, leftPosVec.z);
+            // float newdifference = leftBubbleOriginalDifference - (leftBubbleEdge.transform.position - leftPosVec).x; 
+            // if (Mathf.Abs(newdifference) > .03f)
+            //     speechBubbleLeft.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleLeft.gameObject.transform.position.x, speechBubbleLeft.gameObject.transform.position.x + newdifference, .25f),
+            //                                                                  leftPosVec.y, leftPosVec.z);
 
-            newdifference = rightBubbleOriginalDifference - (rightBubbleEdge.transform.position - rightPosVec).x; 
-            if (Mathf.Abs(newdifference) > .03f)
-                speechBubbleRight.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleRight.gameObject.transform.position.x, speechBubbleRight.gameObject.transform.position.x + newdifference, .25f),
-                                                                              rightPosVec.y, rightPosVec.z);
+            // newdifference = rightBubbleOriginalDifference - (rightBubbleEdge.transform.position - rightPosVec).x; 
+            // if (Mathf.Abs(newdifference) > .03f)
+            //     speechBubbleRight.gameObject.transform.position = new Vector3(Mathf.Lerp(speechBubbleRight.gameObject.transform.position.x, speechBubbleRight.gameObject.transform.position.x + newdifference, .25f),
+            //                                                                   rightPosVec.y, rightPosVec.z);
         }
     }
 

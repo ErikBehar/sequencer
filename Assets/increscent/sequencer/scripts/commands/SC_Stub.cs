@@ -38,11 +38,11 @@ public class SC_Stub : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("stub"));
+        GUILayout.Button( sequencerData.getIconTexture("stub"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()
-    { 
+    {
         stubName = GUILayout.TextField( stubName );
     }
 #endif

@@ -14,4 +14,6 @@ public abstract class VN_CharBase : MonoBehaviour
     public abstract int getCurrentExpression();
     public abstract string getCurrentExpressionName();
     public abstract void flip();
+
+    public abstract GameObject getCurrentAttireGO();
 }

@@ -31,8 +31,13 @@ public class UGuiChoiceButtons : ChoiceControllerBase
 
         for (int i = 0; i < choices.Count; i++)
         {
+            if (!choices[i].showChoice)
+            {
+                Debug.Log("continue");
+                continue;
+            }
             GameObject button = Instantiate(exampleButton) as GameObject;
-            button.transform.FindChild("Text").GetComponent<Text>().text = choices [i].text;
+            button.transform.Find("Text").GetComponent<Text>().text = choices [i].text;
 
             //note this value must be captured outside of the addlistener below
             //for some strange esoteric reason Im still figuring out
@@ -40,7 +45,7 @@ public class UGuiChoiceButtons : ChoiceControllerBase
 
             button.GetComponent<Button>().onClick.AddListener(() => onButtonClick(tempTextVal));
 
-            button.transform.parent = exampleButton.transform.parent;
+            button.transform.SetParent(exampleButton.transform.parent, true);
             button.transform.localPosition = new Vector3(0, (Screen.height / 2) + (-100 * (i + 1)), 0);
             button.transform.localScale = Vector3.one;
             button.SetActive(true);

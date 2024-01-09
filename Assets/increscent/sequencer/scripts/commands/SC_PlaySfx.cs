@@ -21,7 +21,7 @@ public class SC_PlaySfx : SequencerCommandBase
 
     public override string commandType{ get { return "base"; } }
 
-    public string audioClipName = SoundManagerEB.nullSoundName;
+    public string audioClipName = SoundManager.nullSoundName;
     public AudioClip audioClip;
     public float volume = 1.0f;
     public bool waitForAudioClipEnd = false;
@@ -50,16 +50,16 @@ public class SC_PlaySfx : SequencerCommandBase
             undo();
         } else
         {
-            if (audioClipName != SoundManagerEB.nullSoundName && audioClipName.Length != 0 && audioClipName != "" && audioClipName != " ")
+            if (audioClipName != SoundManager.nullSoundName && audioClipName.Length != 0 && audioClipName != "" && audioClipName != " ")
             {
-                audioClip = SoundManagerEB.Get().getSfxByName(audioClipName);
-            } else if (SoundManagerEB.Get().getSfxByName(audioClip.name) == null)
+                audioClip = SoundManager.Get().getSfxByName(audioClipName);
+            } else if (SoundManager.Get().getSfxByName(audioClip.name) == null)
             {
-                SoundManagerEB.Get().sfxClips.Add(audioClip); 
+                SoundManager.Get().sfxClips.Add(audioClip); 
                 audioClipName = audioClip.name;
             }
             
-            SoundManagerEB.Get().playSfx(audioClipName, volume);
+            SoundManager.Get().playSfx(audioClipName, volume);
         }
 
         if (!waitForAudioClipEnd || player.inRewindMode)
@@ -71,10 +71,10 @@ public class SC_PlaySfx : SequencerCommandBase
     override public void undo()
     {
         isWaiting = false;
-        if (audioClipName != SoundManagerEB.nullSoundName)
-            SoundManagerEB.Get().stopPlayingSoundList(new List<string>(){audioClipName});
+        if (audioClipName != SoundManager.nullSoundName)
+            SoundManager.Get().stopPlayingSoundList(new List<string>(){audioClipName});
         else
-            SoundManagerEB.Get().stopPlayingSoundList(new List<AudioClip>(){audioClip});
+            SoundManager.Get().stopPlayingSoundList(new List<AudioClip>(){audioClip});
     }
 
     private IEnumerator doAudioWaitFinish()

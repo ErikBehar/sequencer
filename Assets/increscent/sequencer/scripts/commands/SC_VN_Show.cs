@@ -236,8 +236,13 @@ public class SC_VN_Show : SequencerCommandBase
             myPlayer.callBackFromCommand();
         }
     }
-    
-    #if UNITY_EDITOR
+
+#if UNITY_EDITOR
+
+    override public void drawMinimizedUi()
+    {
+        GUILayout.Button(sequencerData.getIconTexture("show"), GUILayout.Width(32));
+    }
     override public void drawCustomUi()
     {
         string[] nickChars = sequencerData.getTargetNickNamesByType(SequencerTargetTypes.character);

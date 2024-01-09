@@ -47,19 +47,19 @@ public class SC_PlayMusic : SequencerCommandBase
             undo();
         } else
         {
-            previousPlayingMusicClipName = SoundManagerEB.Get().getCurrentMusicClipName();
-            previousVolume = SoundManagerEB.Get().musicVolume;
+            previousPlayingMusicClipName = SoundManager.Get().getCurrentMusicClipName();
+            previousVolume = SoundManager.Get().musicVolume;
 
-            if (audioClipName != SoundManagerEB.nullSoundName && audioClipName.Length != 0 && audioClipName != "" && audioClipName != " ")
+            if (audioClipName != SoundManager.nullSoundName && audioClipName.Length != 0 && audioClipName != "" && audioClipName != " ")
             {
-                audioClip = SoundManagerEB.Get().getMusicByName(audioClipName);
-            } else if (SoundManagerEB.Get().getMusicByName(audioClip.name) == null)
+                audioClip = SoundManager.Get().getMusicByName(audioClipName);
+            } else if (SoundManager.Get().getMusicByName(audioClip.name) == null)
             {
-                SoundManagerEB.Get().musicClips.Add(audioClip);
+                SoundManager.Get().musicClips.Add(audioClip);
                 audioClipName = audioClip.name;
             }
 
-            SoundManagerEB.Get().playMusic(audioClipName, volume);
+            SoundManager.Get().playMusic(audioClipName, volume);
         }
         
         myPlayer.callBackFromCommand(); 
@@ -67,10 +67,10 @@ public class SC_PlayMusic : SequencerCommandBase
     
     override public void undo()
     {
-        if (previousPlayingMusicClipName == SoundManagerEB.nullSoundName)
-            SoundManagerEB.Get().fadeOutMusic();
+        if (previousPlayingMusicClipName == SoundManager.nullSoundName)
+            SoundManager.Get().fadeOutMusic();
         else
-            SoundManagerEB.Get().playMusic(previousPlayingMusicClipName, previousVolume);
+            SoundManager.Get().playMusic(previousPlayingMusicClipName, previousVolume);
     }
 
     override public void forward(SequencePlayer player)

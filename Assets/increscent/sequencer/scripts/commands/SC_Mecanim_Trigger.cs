@@ -71,7 +71,7 @@ public class SC_Mecanim_Trigger : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("triggerAnim"));
+        GUILayout.Button( sequencerData.getIconTexture("triggerAnim"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()

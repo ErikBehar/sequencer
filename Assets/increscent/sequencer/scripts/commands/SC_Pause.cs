@@ -78,7 +78,7 @@ public class SC_Pause : SequencerCommandBase
 
     override public void drawMinimizedUi()
     {
-        GUILayout.Button( sequencerData.getIconTexture("pause"));
+        GUILayout.Button( sequencerData.getIconTexture("pause"), GUILayout.Width(32));
     }
 
     override public void drawCustomUi()
