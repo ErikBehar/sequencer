@@ -62,7 +62,7 @@ public class RenameVariableWindow : EditorWindow
         {
             if (variableModel.name == newName)
             {
-                Debug.LogWarning(" Nickname must be unique ! Can not rename! ");
+                Debug.LogWarning(" Name must be unique ! Can not rename! ");
                 return;
             }
         }

@@ -265,7 +265,7 @@ public class SC_VN_ExpressionJump : SequencerCommandBase
         {
             if (expressionList [i].Contains(("[" + oldVariable + "]")))
             {
-                expressionList [i].Replace("[" + oldVariable + "]", "[" + newVariable + "]");
+                expressionList[i] = expressionList [i].Replace("[" + oldVariable + "]", "[" + newVariable + "]");
                 wasChanged = true;
             }
         }

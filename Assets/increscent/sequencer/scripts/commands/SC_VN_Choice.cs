@@ -154,7 +154,27 @@ public class SC_VN_Choice : SequencerCommandBase
             EditorGUILayout.EndVertical();
         }
     }
-    #endif
+#endif
+
+    override public bool updateVariableReference(string oldVariable, string newVariable)
+    {
+        bool wasChanged = false;
+
+        for (int i = 0; i < size; i++)
+        {
+            if (expressionList[i].Contains(("[" + oldVariable + "]")))
+            {
+                Debug.Log("changing variable");
+                expressionList[i] = expressionList[i].Replace("[" + oldVariable + "]", "[" + newVariable + "]");
+                wasChanged = true;
+            }
+        }
+
+        if (wasChanged)
+            return true;
+
+        return false;
+    }
 
     void makeSureListsAreCorrectSize()
     {
