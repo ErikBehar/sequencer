@@ -13,13 +13,13 @@ public class SequencerWindow : EditorWindow
 	Vector2 scrollPosSections;
 	GameObject dataHolderValGoLastVal = null;
 	TextAsset fileData;
-	static GameObject dataHolderGO = null;
-	public static SequencerData sequencerData;
-	static string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables", "statistics"
+	GameObject dataHolderGO = null;
+	public SequencerData sequencerData;
+	string lastSelectedArea = "targets"; //can be "targets" , "sections", "import", "variables", "statistics"
 
-	static int lastSelectedSection = -1;
-	static string renameBoxString = "";
-	static int lastSelectedCommand = 0;
+	int lastSelectedSection = -1;
+	string renameBoxString = "";
+	int lastSelectedCommand = 0;
 	int lastSelectedCommandFilter = 0;
 	bool doTypeFilter = false;
 
@@ -36,12 +36,12 @@ public class SequencerWindow : EditorWindow
 	GUIStyle guiBGDragColor;
 	Texture2D littleTextureForBG_Drag;
 
-	static int insertIndex = 0;
+	int insertIndex = 0;
 
 	TextAsset renpyTextAsset;
 	string importTextAreaText = "";
 
-	public static bool paging = true;
+	public bool paging = true;
 	int pagingSize = 100;
 	int page = 0;
 
@@ -329,7 +329,7 @@ public class SequencerWindow : EditorWindow
 				lastSelectedArea = "variables";
 			}
 
-			if (GUILayout.Button("Import"))
+			if (GUILayout.Button("Import & Export"))
 			{
 				lastSelectedArea = "import";
 			}
@@ -771,7 +771,15 @@ public class SequencerWindow : EditorWindow
 			{
 				setColors();
 			}
-		}
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+			if (GUILayout.Button("Update UIDs"))
+			{
+				updateUIDS();
+			}
+        }
 		EditorGUILayout.EndVertical();
 	}
 
@@ -1032,7 +1040,26 @@ public class SequencerWindow : EditorWindow
 			}
 			EditorGUILayout.EndHorizontal();
 
-		}
+            EditorGUILayout.BeginHorizontal();
+            {
+                GUILayout.Label("Export Dialog file name: ");
+                renpyExportFileName = EditorGUILayout.TextField(renpyExportFileName);
+                if (GUILayout.Button("Export Dialog & VO file"))
+                {
+                    doExportDialogAndVOFile(renpyExportFileName);
+                }
+
+                fileData = EditorGUILayout.ObjectField(fileData, typeof(TextAsset), true) as TextAsset;
+                if (GUILayout.Button("Import data into scene") && fileData != null)
+                {
+                    doImportDialogVOFile();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+
+
+        }
 		EditorGUILayout.EndVertical();
 	}
 
@@ -1277,6 +1304,43 @@ public class SequencerWindow : EditorWindow
 		Repaint();
 	}
 
+	void doExportDialogAndVOFile( string filename)
+	{
+        string filePath = Application.dataPath + "/" + filename + "_dialog.txt";
+        StreamWriter fileStream = new StreamWriter(filePath);
+
+        foreach (SequencerSectionModel section in sequencerData.sections)
+        {
+            fileStream.Write("Scene: " + section.name + Environment.NewLine);
+            foreach (SequencerCommandBase command in section.commandList)
+            {
+                Type typeCommand = command.GetType();
+
+				if (typeCommand == typeof(SC_VN_Choice))
+				{
+					SC_VN_Choice choice = (SC_VN_Choice) command;
+					fileStream.Write("Choice: " + choice.size + Environment.NewLine);
+					for(int i =0; i < choice.size; i++)
+					{
+						fileStream.Write(choice.uids[i].ToString() + " " + choice.optionTextList[i] + " ╫ " + Environment.NewLine);			
+					}
+				}
+				else if ( typeCommand == typeof(SC_VN_Dialog))
+				{
+                    SC_VN_Dialog dia = (SC_VN_Dialog)command;
+                    fileStream.Write("Dialog: " + dia.speakerTargetName + Environment.NewLine);
+					fileStream.Write(dia.uid + " ╫ " + dia.audioClipName + " ╫ " + dia.text + " ╫ " + Environment.NewLine);
+                }
+            }
+
+            fileStream.Write(Environment.NewLine);
+        }
+
+        fileStream.Close();
+
+        Debug.LogWarning("Done, file at: " + filePath);
+    }
+
 	void doExportSequencerFile()
 	{
 		string filePath = Application.dataPath + "/" + sequencerData.gameObject.name + ".txt";
@@ -1312,7 +1376,172 @@ public class SequencerWindow : EditorWindow
 		Debug.LogWarning("Done, file at: " + filePath);
 	}
 
-	void doImportSequencerFile()
+    public Stream GenerateStreamFromString(string s)
+    {
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(s);
+        writer.Flush();
+        stream.Position = 0;
+        return stream;
+    }
+
+    struct DialogSwitchTarget
+    {
+        public string sceneName;
+        public uint uid;
+        public string text;
+        public string audioName;
+    }
+    public string RemoveWhitespace(string str)
+    {
+        return string.Join("", str.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    void doImportDialogVOFile()
+	{
+		Dictionary<uint, DialogSwitchTarget> uidToData = new();
+
+		using (var stream = GenerateStreamFromString(fileData.text))
+        {
+			StreamReader reader = new StreamReader(stream);
+
+            string line;
+			string currSceneName = "";
+			// Read line by line
+			while ((line = reader.ReadLine()) != null)
+			{
+                //Choice: size, Dialog: target, Scene: name
+                if (line.Contains("Scene:"))
+                {
+                    string[] split = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+
+                    currSceneName = split[1];
+                }
+                else if (line.Contains("Choice:"))
+                {
+					// parsing this:
+                    // fileStream.Write(choice.uids[i].ToString() + " " + choice.optionTextList[i] + " ╫ " + Environment.NewLine);
+                    
+					string[] split = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+
+                    uint size = uint.Parse(split[1]);
+
+					for(int i=0; i < size; i++)
+					{
+						int index = 0;
+						int spaceIndex = 0;
+                        List<char> uidChars = new List<char>();
+						List<char> choiceTextChars = new List<char>();
+                        while (reader.Peek() >= 0)
+                        {
+                            char c = (char)reader.Read();
+
+                            if (c == '╫')
+                            {
+                                break;
+                            }
+							else if ( c == ' ')
+							{
+								spaceIndex = index;
+								continue;
+							}
+
+							if ( spaceIndex == 0)
+							{
+								uidChars.Add(c);
+							}
+							else
+							{
+								choiceTextChars.Add(c);
+							}
+							
+							index++;
+                        }
+
+						DialogSwitchTarget switchTar = new();
+                        switchTar.text = new string(choiceTextChars.ToArray());
+						switchTar.sceneName = currSceneName;
+						switchTar.uid = uint.Parse(uidChars.ToArray());
+						uidToData[switchTar.uid] = switchTar;
+                    }
+				}
+				else if (line.Contains("Dialog:"))
+				{
+					// parsing this:
+                    // fileStream.Write(dia.uid + " ╫ " + dia.audioClipName + " ╫ " + dia.text + " ╫ " + Environment.NewLine);
+
+                    int delimeterCount = 0;
+                    List<char> uidChars = new List<char>();
+					List<char> audioChars = new List<char>();
+                    List<char> textChars = new List<char>();
+                    while (reader.Peek() >= 0)
+                    {
+                        char c = (char)reader.Read();
+
+                        if (c == '╫')
+                        {
+							delimeterCount++;
+							if ( delimeterCount == 3)
+							{
+								break;
+							}
+							reader.Read();
+                            continue;
+                        }
+                       
+                        if (delimeterCount == 0)
+                        {
+                            uidChars.Add(c);
+                        }
+                        else if (delimeterCount == 1)
+                        {
+                            audioChars.Add(c);
+                        }else if (delimeterCount == 2)
+						{
+                            textChars.Add(c);
+						}
+                    }
+
+					DialogSwitchTarget switchTar = new();
+					switchTar.text = new string(textChars.ToArray());
+					switchTar.audioName = RemoveWhitespace(new string(audioChars.ToArray()));
+					switchTar.sceneName = currSceneName;
+					switchTar.uid = uint.Parse(uidChars.ToArray());
+
+                    uidToData[switchTar.uid] = switchTar;
+                }
+            }
+        }
+
+        //actually replace dialogs + VO 
+        foreach (SequencerSectionModel section in sequencerData.sections)
+        {
+            foreach (SequencerCommandBase command in section.commandList)
+            {
+                Type typeCommand = command.GetType();
+
+                if (typeCommand == typeof(SC_VN_Choice))
+                {
+                    SC_VN_Choice choice = (SC_VN_Choice)command;
+                    for (int i = 0; i < choice.size; i++)
+                    {
+						choice.optionTextList[i] = uidToData[choice.uids[i]].text;
+                    }
+                }
+                else if (typeCommand == typeof(SC_VN_Dialog))
+                {
+                    SC_VN_Dialog dia = (SC_VN_Dialog)command;
+					dia.text = uidToData[dia.uid].text;
+					dia.audioClipName = uidToData[dia.uid].audioName;
+                }
+            }
+        }
+
+        Debug.Log("Finished import of Dialog file!");
+	}
+
+    void doImportSequencerFile()
 	{
 		string[] splitFile = fileData.text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -1593,6 +1822,84 @@ public class SequencerWindow : EditorWindow
 			sequencerData.sections[lastSelectedSection].commandList[fromIndex].changeIndex(toIndex);
 		}
 	}
+
+	//Update unique ids, only updates id's that have 0
+	void updateUIDS()
+	{
+        //first we should count up if any
+        int length = sequencerData.sections.Count;
+		for (int i = 0; i < length; i++)
+		{
+			foreach (SequencerCommandBase seqCommand in sequencerData.sections[i].commandList)
+			{
+                Type typeCommand = seqCommand.GetType();
+
+				if (typeCommand == typeof(SC_VN_Choice))
+				{
+					SC_VN_Choice choice = seqCommand as SC_VN_Choice;
+					for (int j = 0; j < choice.uids.Count; j++)
+					{
+						if (choice.uids[j] > sequencerData.last_uid)
+						{
+							sequencerData.last_uid = choice.uids[j];
+						}
+					}
+				}
+
+                if (typeCommand == typeof(SC_VN_Dialog))
+                {
+                    SC_VN_Dialog dia = seqCommand as SC_VN_Dialog;
+                    if (dia.uid != 0)
+                    {
+                        if ( dia.uid > sequencerData.last_uid)
+						{
+							sequencerData.last_uid = dia.uid;	
+						}
+                    }
+                }
+            }
+		}
+
+        // replace the ones that are missing
+        for (int i = 0; i < length; i++)
+        {
+            foreach (SequencerCommandBase seqCommand in sequencerData.sections[i].commandList)
+            {
+                Type typeCommand = seqCommand.GetType();
+
+				if (typeCommand == typeof(SC_VN_Choice))
+				{
+					SC_VN_Choice choice = seqCommand as SC_VN_Choice;
+					//assign existing
+					for (int j = 0; j < choice.uids.Count; j++)
+					{
+						if (choice.uids[j] == 0)
+						{
+							choice.uids[j] = sequencerData.NewUID();
+						}
+					}
+
+                    //check size matches, update it if not
+                    if (choice.uids.Count < choice.size)
+					{
+                        for (int z = choice.uids.Count; z < choice.size; z++)
+                        {
+                            choice.uids.Add(sequencerData.NewUID());
+                        }
+                    }
+                }
+
+				if (typeCommand == typeof(SC_VN_Dialog))
+				{
+					SC_VN_Dialog dia = seqCommand as SC_VN_Dialog;
+                    if ( dia.uid == 0)
+					{
+						dia.uid = sequencerData.NewUID();
+					}
+                }
+            }
+        }
+    }
 
 	//developer function to force fix commands 
 	//    void doFixCommands()

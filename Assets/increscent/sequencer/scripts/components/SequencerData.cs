@@ -26,6 +26,15 @@ public class SequencerData : MonoBehaviour
 
     private Texture defaultTexture;
 
+    //0 is not valid, store last used uid here
+    [ReadOnly]
+    public uint last_uid = 0;
+
+    public uint NewUID()
+    {
+        return last_uid += 1;
+    }
+
     public Texture getIconTexture(string name)
     {
         #if UNITY_EDITOR

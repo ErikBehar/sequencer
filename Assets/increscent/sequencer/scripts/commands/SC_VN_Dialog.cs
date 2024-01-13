@@ -31,8 +31,13 @@ public class SC_VN_Dialog : SequencerCommandBase
 
     private Coroutine coroutineWaitTime = null;
 
+    [ReadOnly]
+    public uint uid = 0; //unique id, used to find this specific text
+
     override public void initChild()
     {
+        if (uid == 0)
+            uid = sequencerData.NewUID();
     }
 
     override public SequencerCommandBase clone()
@@ -47,6 +52,7 @@ public class SC_VN_Dialog : SequencerCommandBase
         newCmd.audioClip = audioClip;
         newCmd.volume = volume;
         newCmd.bubbleXOffset = bubbleXOffset;
+        newCmd.uid = uid;
         return base.clone(newCmd);        
     }
 
@@ -251,7 +257,8 @@ public class SC_VN_Dialog : SequencerCommandBase
         return GetType().Name + "╫" + speakerTargetName + "╫"
             + text + "╫" + time.ToString() + "╫" + ((audioClip != null) ? audioClip.name : audioClipName) + "╫" 
             + volume.ToString() + "╫" + bubbleXOffset.ToString() + "╫"  
-            + selectSpeakerPosition.ToString() + "╫" + speakerPosName + "╫\n"  ;
+            + selectSpeakerPosition.ToString() + "╫" + speakerPosName + "╫" 
+            + uid.ToString() + "╫\n";
     }
 
     override public void initFromSequncerSerializedString(string[] splitString)
@@ -264,6 +271,7 @@ public class SC_VN_Dialog : SequencerCommandBase
         bubbleXOffset = float.Parse(splitString [6]);
         selectSpeakerPosition = bool.Parse(splitString[7]);
         speakerPosName = splitString[8];
+        uid = uint.Parse(splitString[9]);
     }
 
     override public bool updateTargetReference(string oldNickname, string newNickName)

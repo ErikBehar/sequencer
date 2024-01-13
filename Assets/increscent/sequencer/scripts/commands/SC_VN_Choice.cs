@@ -26,12 +26,22 @@ public class SC_VN_Choice : SequencerCommandBase
     public List<int> commandIndexList;
     public List<string> expressionList;
 
+    [ReadOnly]
+    public List<uint> uids = new(); //unique id(s), used to find this specific text(s)
+
     [HideInInspector]
     public List<SequencerCommandBase>
         targetCommandList;
 
     override public void initChild()
     {
+        for(int i=0; i < uids.Count;i++) 
+        {
+            if (uids[i] == 0)
+            {
+                uids[i] = sequencerData.NewUID();
+            }
+        }
     }
 
     override public SequencerCommandBase clone()
@@ -43,6 +53,7 @@ public class SC_VN_Choice : SequencerCommandBase
         newCmd.commandIndexList = new List<int>(commandIndexList.ToArray());
         newCmd.targetCommandList = new List<SequencerCommandBase>(targetCommandList.ToArray());
         newCmd.expressionList = new List<string>(expressionList.ToArray());
+        newCmd.uids = new List<uint>(uids.ToArray());
         return base.clone(newCmd);        
     }
 
@@ -178,6 +189,7 @@ public class SC_VN_Choice : SequencerCommandBase
 
     void makeSureListsAreCorrectSize()
     {
+        //if emtpy make default sized 
         if (sectionNameList == null)
             sectionNameList = new List<string>(size); 
 
@@ -193,6 +205,10 @@ public class SC_VN_Choice : SequencerCommandBase
         if (expressionList == null)
             expressionList = new List<string>(size);
 
+        if (uids == null)
+            uids = new List<uint>(size);
+
+        //if not quite empty make sure to add to reach size
         if (sectionNameList.Count < size)
             sectionNameList.AddRange(Enumerable.Repeat("", size - sectionNameList.Count).ToList());
 
@@ -214,11 +230,21 @@ public class SC_VN_Choice : SequencerCommandBase
         if (expressionList.Count < size)
             expressionList.AddRange(Enumerable.Repeat("", size-expressionList.Count).ToList());
 
+        if(uids.Count < size)
+        {
+            for(int i=uids.Count; i < size; i++)
+            {
+                uids.Add( sequencerData.NewUID() );
+            }
+        }
+
+        //if too big, chop em
         commandIndexList = commandIndexList.GetRange(0, size);
         sectionNameList = sectionNameList.GetRange(0, size);
         optionTextList = optionTextList.GetRange(0, size);
         targetCommandList = targetCommandList.GetRange(0, size);
         expressionList = expressionList.GetRange(0, size);
+        uids = uids.GetRange(0, size);
     }
 
     override public void indexWasUpdated()
@@ -276,7 +302,8 @@ public class SC_VN_Choice : SequencerCommandBase
         string choices = "";
         for (int i=0; i < size; i++)
         {
-            choices += sectionNameList[i] + "╫" + optionTextList[i] + "╫" + commandIndexList[i] + "╫" + expressionList[i] + "╫";    
+            choices += sectionNameList[i] + "╫" + optionTextList[i] + "╫" + commandIndexList[i] + "╫" + expressionList[i] + "╫"
+                       + uids[i]  + "╫";    
         }
 
         return GetType().Name + "╫" + choices + "╫\n";
@@ -288,6 +315,7 @@ public class SC_VN_Choice : SequencerCommandBase
         optionTextList = new List<string>();
         commandIndexList = new List<int>();
         expressionList = new List<string>();
+        uids = new List<uint>();
 
         for (int i=1; i+2 < splitString.Length; i+=3)
         {
@@ -295,6 +323,7 @@ public class SC_VN_Choice : SequencerCommandBase
             optionTextList.Add(splitString [i + 1]);
             commandIndexList.Add(int.Parse(splitString [i + 2]));
             expressionList.Add(splitString[i + 3]);
+            uids.Add(uint.Parse(splitString[i + 4]));
         }
     }
 
