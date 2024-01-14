@@ -5,7 +5,7 @@ using UnityEngine.Events;
 public class SimpleSequenceStepEvent : SimpleSequenceStepBase
 {
     public UnityEvent thingToDo;
-    new public void onExecuteStep()
+    override public void onExecuteStep()
     {
         thingToDo.Invoke();
     }

@@ -18,5 +18,5 @@ public abstract class SimpleSequenceStepBase
     //index to skip to at end of step ( -1 = just go to next one)
     public int skipToIndex = -1;
 
-    public void onExecuteStep() { }
+    abstract public void onExecuteStep();
 }

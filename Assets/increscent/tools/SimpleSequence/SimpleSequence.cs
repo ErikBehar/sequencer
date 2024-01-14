@@ -10,17 +10,11 @@ public class SimpleSequence : MonoBehaviour
     public int currIndex = 0;
     public bool useRealtime = false;
 
-    [HideInInspector]
-    public List<string> stepTypes = new List<string>();
-    [HideInInspector]
-    public int pickedTypeIndex = 0;
-
     [SerializeReference, Subclass(IsList = true)]
     public List<SimpleSequenceStepBase> steps;
 
     public void addStepWithType( Type stepType)
     {
-        Debug.Log(stepType);
         SimpleSequenceStepBase step = (SimpleSequenceStepBase)Activator.CreateInstance(stepType);
         steps.Add(step);
     }
@@ -48,9 +42,9 @@ public class SimpleSequence : MonoBehaviour
             return;
         }
         
-        // Debug.Log("Executing step: " + currIndex + " of " + steps.Count + " in sequence: " + sequenceDescription);
         if (steps.Count > currIndex)
         {
+            Debug.Log("Executing step: " + (currIndex+1) + " of " + steps.Count + " in sequence: " + sequenceDescription);
             SimpleSequenceStepBase currStep = steps[currIndex];
             currStep.onExecuteStep();
             if (currStep.deliverCallback.GetPersistentEventCount() > 0)
@@ -67,7 +61,7 @@ public class SimpleSequence : MonoBehaviour
         }
         else
         {
-            //Debug.Log("REACHED END OF SEQUENCE, stopping coroutines for" + sequenceDescription);
+            Debug.Log("REACHED END OF SEQUENCE, stopping coroutines for" + sequenceDescription);
             StopAllCoroutines();
         }
     }

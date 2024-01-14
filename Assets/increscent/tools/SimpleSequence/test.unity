@@ -261,20 +261,26 @@ MonoBehaviour:
   waitingForCallback: 0
   currIndex: 0
   useRealtime: 0
-  stepTypes:
-  - SimpleSequenceStepEvent
-  - SimpleSequenceStepOther
-  stepTypePaths:
-  - Assets/increscent/tools/SimpleSequence/StepTypes/SimpleSequenceStepEvent.cs
-  - Assets/increscent/tools/SimpleSequence/StepTypes/SimpleSequenceStepOther.cs
-  pickedTypeIndex: 0
   steps:
-  - rid: 4501746172001255427
-  - rid: 4501746172001255428
+  - rid: 4501746173140008966
+  - rid: 4501746173140008967
+  - rid: 4501746173140008968
   references:
     version: 2
     RefIds:
-    - rid: 4501746172001255427
+    - rid: 4501746173140008966
+      type: {class: SimpleSequenceStepEvent, ns: , asm: Assembly-CSharp}
+      data:
+        StepDescription: 
+        deliverCallback:
+          m_PersistentCalls:
+            m_Calls: []
+        timerToNextAction: 0
+        skipToIndex: -1
+        thingToDo:
+          m_PersistentCalls:
+            m_Calls: []
+    - rid: 4501746173140008967
       type: {class: SimpleSequenceStepOther, ns: , asm: Assembly-CSharp}
       data:
         StepDescription: 
@@ -284,7 +290,7 @@ MonoBehaviour:
         timerToNextAction: 0
         skipToIndex: -1
         cheese: 200
-    - rid: 4501746172001255428
+    - rid: 4501746173140008968
       type: {class: SimpleSequenceStepEvent, ns: , asm: Assembly-CSharp}
       data:
         StepDescription: 

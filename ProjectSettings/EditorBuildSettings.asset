@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/increscent/sequencer/example/prefabs/testScene_uGui.unity
+    path: Assets/increscent/sequencer/example/testScene_uGui.unity
     guid: 84957393552bad04895a2ad9ccdef759
   m_configObjects: {}
