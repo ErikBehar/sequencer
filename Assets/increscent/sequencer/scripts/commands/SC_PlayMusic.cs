@@ -57,6 +57,9 @@ public class SC_PlayMusic : SequencerCommandBase
             {
                 SoundManager.Get().musicClips.Add(audioClip);
                 audioClipName = audioClip.name;
+            }else if ( audioClip != null)
+            {
+                audioClipName = audioClip.name;
             }
 
             SoundManager.Get().playMusic(audioClipName, volume);
